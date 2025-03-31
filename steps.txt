@@ -1,0 +1,29 @@
+OrderReceived
+FabricPurchased
+PrintingAndDyeing
+ClothCutting
+Stitching
+FinishingAndPacking
+Dispatch
+
+"""
+1. Order received
+2. Fabric Purchased
+3. Sent to Dryer or Printer and received
+4. SEnt for cloth cutting and received
+5. Sent for stitching and received
+6. Sent for extra work
+7. Sent for finishing and packing
+8. Dispatched
+"""
+
+Done until
+viewing all orders
+adding order
+
+TODO
+
+create each form page
+check if each form add button is showing correctly
+add pagination on homepage
+create filter by status on homepage

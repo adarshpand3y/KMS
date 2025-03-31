@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% load crispy_forms_tags %}
+
+{% block title %}
+Add Fabric Purchased Details
+{% endblock title %}
+
+{% block body %}
+
+<div class="container">
+    <div class="card d-block mx-auto m-4" style="max-width: 500px; width: 100%;">
+        <div class="card-body">
+            <h3>Add fabric purchase details</h3>
+            <hr>
+            <h6 class="fw-bold">Order # {{ order.style_id }}</h6>
+            <h6 class="fw-bold">Order received from: {{ order.order_received_from }}</h6>
+            <hr>
+            <form method="POST">
+                {% csrf_token %}
+                {{ form|crispy }}
+                <button type="submit" class="btn btn-primary">Add Order</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock body %}

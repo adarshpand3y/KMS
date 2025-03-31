@@ -1,0 +1,832 @@
+{% extends "base.html" %}
+
+{% load custom_filters %}
+
+{% block title %}
+KMS
+{% endblock title %}
+
+{% block body %}
+<div class="container">
+  <!-- Order Details Page -->
+  {% load custom_filters %}
+
+  <!-- Order Details Page -->
+  <div class="mt-4">
+    <!-- Order Header -->
+    <div class="row mb-4">
+      <div class="col-lg-12">
+        <div class="card">
+          <div class="card-header text-white d-flex justify-content-between align-items-center">
+            <h4 class="mb-0">Order #{{ order.id }} - {{ order.style_id }}</h4>
+            <span class="badge bg-light text-dark">{{ order.status }}</span>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-md-3">
+                <p class="text-muted mb-1">Order Date</p>
+                <p class="fw-bold">{{ order.order_date|date:"F d, Y" }}</p>
+              </div>
+              <div class="col-md-3">
+                <p class="text-muted mb-1">Order From</p>
+                <p class="fw-bold">{{ order.order_received_from }}</p>
+              </div>
+              <div class="col-md-3">
+                <p class="text-muted mb-1">Quantity</p>
+                <p class="fw-bold">{{ order.quantity|indian_number_format }} units</p>
+              </div>
+              <div class="col-md-3">
+                <p class="text-muted mb-1">Total Amount</p>
+                <p class="fw-bold">₹ {{ order.amount|indian_number_format }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Progress Tracker -->
+    <div class="row mb-4">
+      <div class="col-lg-12">
+        <div class="card">
+          <div class="card-header text-white">
+            <h5 class="mb-0">Manufacturing Progress</h5>
+          </div>
+          <div class="card-body">
+            <div class="progress-track">
+              <ul class="progressbar">
+                {% for status in order.STATUS %}
+                {% with status_position=order.status|get_status_position %}
+                <li class="{% if status.0 == order.status or forloop.counter <= status_position %}active{% endif %}">
+                  {{ status.0 }}
+                </li>
+                {% endwith %}
+                {% endfor %}
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Accordion for Process Details -->
+    <div class="row">
+      <div class="col-lg-12">
+        <div class="accordion" id="manufacturingProcess">
+          <!-- 1. Order Details -->
+          <div class="accordion-item">
+            <h2 class="accordion-header" id="orderHeading">
+              <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#orderCollapse"
+                aria-expanded="true" aria-controls="orderCollapse">
+                <i class="bi bi-clipboard-check me-2"></i> Order Details
+              </button>
+            </h2>
+            <div id="orderCollapse" class="accordion-collapse collapse show" aria-labelledby="orderHeading">
+              <div class="accordion-body">
+                <div class="table-responsive">
+                  <table class="table table-bordered table-striped table-hover">
+                    <tr>
+                      <th scope="row">Style ID</th>
+                      <td>{{order.style_id}}</td>
+                    </tr>
+                    <tr>
+                      <th scope="row">Added By</th>
+                      <td>{{order.user}}</td>
+                    </tr>
+                    <tr>
+                      <th scope="row">Order From</th>
+                      <td>{{ order.order_received_from }}</td>
+                    </tr>
+                    <tr>
+                      <th scope="row">Quantity</th>
+                      <td>{{ order.quantity|indian_number_format }}</td>
+                    </tr>
+                    <tr>
+                      <th scope="row">Rate</th>
+                      <td>₹ {{ order.rate|indian_number_format }}</td>
+                    </tr>
+                    <tr>
+                      <th scope="row">Order Date</th>
+                      <td>{{ order.order_date|date:"F d, Y" }}</td>
+                    </tr>
+                    <tr>
+                      <th scope="row">Total Amount</th>
+                      <td>₹ {{ order.amount|indian_number_format }}</td>
+                    </tr>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 2. Fabric Purchase -->
+          <div class="accordion-item">
+            <h2 class="accordion-header" id="fabricHeading">
+              <button class="accordion-button {% if not fabric_purchased %}collapsed{% endif %}" type="button"
+                data-bs-toggle="collapse" data-bs-target="#fabricCollapse" aria-expanded="false"
+                aria-controls="fabricCollapse">
+                <i class="bi bi-cart-check me-2"></i> Fabric Purchase
+                {% if fabric_purchased %}
+                <span class="badge bg-success ms-2">Completed</span>
+                {% else %}
+                <span class="badge bg-secondary ms-2">Pending</span>
+                {% endif %}
+              </button>
+            </h2>
+            <div id="fabricCollapse" class="accordion-collapse collapse {% if fabric_purchased %}show{% endif %}"
+              aria-labelledby="fabricHeading">
+              <div class="accordion-body">
+                {% if fabric_purchased %}
+                <div class="table-responsive">
+                  <table class="table table-bordered table-striped table-hover">
+                    <tbody>
+                      <tr>
+                        <th scope="row">Style ID</th>
+                        <td>{{ order.style_id }}</td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Added By</th>
+                        <td>{{fabric_purchased.user}}</td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Purchase Date</th>
+                        <td>{{ fabric_purchased.fabric_purchase_date|date:"F d, Y" }}</td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Purchased From</th>
+                        <td>{{ fabric_purchased.purchased_from }}</td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Quantity</th>
+                        <td>{{ fabric_purchased.quantity|indian_number_format }}</td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Rate</th>
+                        <td>₹ {{ fabric_purchased.rate|indian_number_format }}</td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Amount</th>
+                        <td>{{ fabric_purchased.amount|indian_number_format }}</td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Invoice Number</th>
+                        <td>{{ fabric_purchased.fabric_purchase_date|date:"F d, Y" }}</td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Fabric Details</th>
+                        <td>{{ fabric_purchased.fabric_detail }}</td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Fabric Length</th>
+                        <td>{{ fabric_purchased.fabric_length }}</td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Fabric Dyer</th>
+                        <td>{{ fabric_purchased.fabric_dyer }}</td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Challan Number</th>
+                        <td>{{ fabric_purchased.challan_number }}</td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Issued Challan Date</th>
+                        <td>{{ fabric_purchased.issued_challan_date|date:"F d, Y" }}</td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Issued Challan Quantity</th>
+                        <td>{{ fabric_purchased.issued_challan_quantity|indian_number_format }}</td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Balance Fabric</th>
+                        <td>{{ fabric_purchased.balance_fabric|indian_number_format }}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                {% else %}
+                <div class="text-center py-3">
+                  <p class="text-muted">No fabric purchase information available yet.</p>
+                  {% if order.status|get_status_position == 1 %}
+                  <a href="{% url 'addfabricpurchased' order.id %}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle"></i> Add Fabric Purchase Details
+                  </a>
+                  {% else %}
+                  <p class="text-muted">Add previous data before adding this one.</p>
+                  {% endif %}
+                </div>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+
+          <!-- 3. Printing and Dyeing -->
+          <div class="accordion-item">
+            <h2 class="accordion-header" id="printingHeading">
+              <button class="accordion-button {% if not printing_dyeing %}collapsed{% endif %}" type="button"
+                data-bs-toggle="collapse" data-bs-target="#printingCollapse" aria-expanded="false"
+                aria-controls="printingCollapse">
+                <i class="bi bi-palette me-2"></i> Printing & Dyeing
+                {% if printing_dyeing %}
+                <span class="badge bg-success ms-2">Completed</span>
+                {% else %}
+                <span class="badge bg-secondary ms-2">Pending</span>
+                {% endif %}
+              </button>
+            </h2>
+            <div id="printingCollapse" class="accordion-collapse collapse {% if printing_dyeing %}show{% endif %}"
+              aria-labelledby="printingHeading">
+              <div class="accordion-body">
+                {% if printing_dyeing %}
+                <h5 class="mb-3">Sending Details</h5>
+                <div class="table-responsive">
+                  <table class="table table-bordered table-striped table-hover">
+                    <tbody>
+                      <tr>
+                        <th scope="row">Style ID</th>
+                        <td>{{ order.style_id }}</td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Added By</th>
+                        <td>{{printing_dyeing.user}}</td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Challan Date</th>
+                        <td>{{ printing_dyeing.issued_challan_date|date:"F d, Y" }}</td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Challan Number</th>
+                        <td>{{ printing_dyeing.issued_challan_number }}</td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Dyer/Printer Name</th>
+                        <td>{{ printing_dyeing.dyer_printer_name }}</td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Fabric Detail</th>
+                        <td>{{ printing_dyeing.fabric_detail }}</td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Fabric Length</th>
+                        <td>{{ printing_dyeing.fabric_length }}</td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Issued Quantity</th>
+                        <td>{{ printing_dyeing.issued_challan_quantity }}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <h5 class="mb-3">Receiving Details</h5>
+                <div class="table-responsive">
+                  <table class="table table-bordered table-striped table-hover">
+                    <tbody>
+                      <tr>
+                        <th scope="row">Style ID</th>
+                        <td>{{ order.style_id }}</td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Shrinkage %</th>
+                        <td>{{ printing_dyeing.shrinkage_in_percentage }} %</td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Received Quantity</th>
+                        <td>{{ printing_dyeing.received_quantity|indian_number_format }}</td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Balance Quantity</th>
+                        <td>{{ printing_dyeing.balance_quantity|indian_number_format }}</td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Received Date</th>
+                        <td>{{ printing_dyeing.received_date|date:"F d, Y" }}</td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Received Challan #</th>
+                        <td>{{ printing_dyeing.received_challan_number }}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                  <h5 class="mb-3">Printing/Dyeing Invoice Details</h5>
+                  <div class="table-responsive">
+                    <table class="table table-bordered table-striped table-hover">
+                      <tbody>
+                        <tr>
+                          <th scope="row">Rate</th>
+                          <td>₹ {{ printing_dyeing.rate|indian_number_format }}</td>
+                        </tr>
+                        <tr>
+                          <th scope="row">Amount</th>
+                          <td>₹ {{ printing_dyeing.amount|indian_number_format }}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+                {% else %}
+                <div class="text-center py-3">
+                  <p class="text-muted">No printing and dyeing information available yet.</p>
+                  {% with status_position=order.status|get_status_position %}
+                  {% if order.status|get_status_position == 2 %}
+                  <a href="{% url 'addprintinganddyeing' order.id %}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle"></i> Add Printing & Dyeing Details
+                  </a>
+                  {% else %}
+                  <p class="text-muted">Add previous data before adding this one.</p>
+                  {% endif %}
+                  {% endwith %}
+                </div>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+
+          <!-- 4. Cloth Cutting -->
+          <div class="accordion-item">
+            <h2 class="accordion-header" id="cuttingHeading">
+              <button class="accordion-button {% if not cloth_cutting %}collapsed{% endif %}" type="button"
+                data-bs-toggle="collapse" data-bs-target="#cuttingCollapse" aria-expanded="false"
+                aria-controls="cuttingCollapse">
+                <i class="bi bi-scissors me-2"></i> Cloth Cutting
+                {% if cloth_cutting %}
+                <span class="badge bg-success ms-2">Completed</span>
+                {% else %}
+                <span class="badge bg-secondary ms-2">Pending</span>
+                {% endif %}
+              </button>
+            </h2>
+            <div id="cuttingCollapse" class="accordion-collapse collapse {% if cloth_cutting %}show{% endif %}"
+              aria-labelledby="cuttingHeading">
+              <div class="accordion-body">
+                {% if cloth_cutting %}
+                <h5 class="mb-3">Sending Details</h5>
+                <div class="table-responsive">
+                  <table class="table table-bordered table-striped table-hover">
+                    <tbody>
+                      <tr>
+                        <th scope="row">Style ID</th>
+                        <td>{{ order.style_id }}</td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Added By</th>
+                        <td>{{cloth_cutting.user}}</td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Issued Challan Date</th>
+                        <td>{{ cloth_cutting.issued_challan_date|date:"F d, Y" }}</td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Issued Challan #</th>
+                        <td>{{ cloth_cutting.issued_challan_number }}</td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Job Worker Name</th>
+                        <td>{{ cloth_cutting.job_worker_name }}</td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Fabric Detail</th>
+                        <td>{{ cloth_cutting.fabric_detail }}</td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Fabric Length</th>
+                        <td>{{ cloth_cutting.fabric_length }}</td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Issued Challan Quantity</th>
+                        <td>{{ cloth_cutting.issued_challan_quantity }}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <h5 class="mb-3">Receiving Details</h5>
+                <div class="table-responsive">
+                  <table class="table table-bordered table-striped table-hover">
+                    <tbody>
+                      <tr>
+                        <th scope="row">Style ID</th>
+                        <td>{{ order.style_id }}</td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Received Quantity</th>
+                        <td>{{ cloth_cutting.received_quantity }}</td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Balance Quantity</th>
+                        <td>{{ cloth_cutting.balance_quantity }}</td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Received Date</th>
+                        <td>{{ cloth_cutting.received_date|date:"F d, Y" }}</td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Received Challan Number</th>
+                        <td>{{ cloth_cutting.received_challan_number }}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <h5 class="mb-3">Cloth Cutting Invoice Details</h5>
+                <div class="table-responsive">
+                  <table class="table table-bordered table-striped table-hover">
+                    <tbody>
+                      <tr>
+                        <th scope="row">Rate</th>
+                        <td>₹ {{ cloth_cutting.rate|indian_number_format }}</td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Amount</th>
+                        <td>₹ {{ cloth_cutting.amount|indian_number_format }}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                {% else %}
+                <div class="text-center py-3">
+                  <p class="text-muted">No cloth cutting information available yet.</p>
+                  {% with status_position=order.status|get_status_position %}
+                  {% if not order.status|get_status_position == 3 %}
+                  <p class="text-muted">Add previous data before adding this one.</p>
+                  {% else %}
+                  <a href="{% url 'addclothcutting' order.id %}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle"></i> Add Cloth Cutting Details
+                  </a>
+                  {% endif %}
+                  {% endwith %}
+                </div>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+
+          <!-- 5. Stitching -->
+          <div class="accordion-item">
+            <h2 class="accordion-header" id="stitchingHeading">
+              <button class="accordion-button {% if not stitching %}collapsed{% endif %}" type="button"
+                data-bs-toggle="collapse" data-bs-target="#stitchingCollapse" aria-expanded="false"
+                aria-controls="stitchingCollapse">
+                <i class="bi bi-threads me-2"></i> Stitching
+                {% if stitching %}
+                <span class="badge bg-success ms-2">Completed</span>
+                {% else %}
+                <span class="badge bg-secondary ms-2">Pending</span>
+                {% endif %}
+              </button>
+            </h2>
+            <div id="stitchingCollapse" class="accordion-collapse collapse {% if stitching %}show{% endif %}"
+              aria-labelledby="stitchingHeading">
+              <div class="accordion-body">
+                {% if stitching %}
+                <h5 class="mb-3">Sending Details</h5>
+                <div class="table-responsive">
+                  <table class="table table-bordered table-striped table-hover">
+                    <tbody>
+                      <tr>
+                        <th scope="row">Style ID</th>
+                        <td>{{ order.style_id }}</td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Added By</th>
+                        <td>{{stitching.user}}</td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Issued Challan Date</th>
+                        <td>{{ stitching.issued_challan_date|date:"F d, Y" }}</td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Issued Challan #</th>
+                        <td>{{ stitching.issued_challan_number }}</td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Job Worker Name</th>
+                        <td>{{ stitching.job_worker_name }}</td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Extra Work Name</th>
+                        <td>{{ stitching.extra_work_name }}</td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Issued Challan Quantity</th>
+                        <td>{{ stitching.issued_challan_quantity }}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <h5 class="mb-3">Receiving Details</h5>
+                <div class="table-responsive">
+                  <table class="table table-bordered table-striped table-hover">
+                    <tbody>
+                      <tr>
+                        <th scope="row">Style ID</th>
+                        <td>{{ order.style_id }}</td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Received Quantity</th>
+                        <td>{{ stitching.received_quantity }}</td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Balance Quantity</th>
+                        <td>{{ stitching.balance_quantity }}</td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Received Date</th>
+                        <td>{{ stitching.received_date|date:"F d, Y" }}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <h5 class="mb-3">Stitching Invoice Details</h5>
+                <div class="table-responsive">
+                  <table class="table table-bordered table-striped table-hover">
+                    <tbody>
+                      <tr>
+                        <th scope="row">Rate</th>
+                        <td>₹ {{ stitching.rate|indian_number_format }}</td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Amount</th>
+                        <td>₹ {{ stitching.amount|indian_number_format }}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                {% else %}
+                <div class="text-center py-3">
+                  <p class="text-muted">No stitching information available yet.</p>
+                  {% with status_position=order.status|get_status_position %}
+                  {% if not order.status|get_status_position == 4 %}
+                  <p class="text-muted">Add previous data before adding this one.</p>
+                  {% else %}
+                  <a href="{% url 'addstitching' order.id %}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle"></i> Add Stitching Details
+                  </a>
+                  {% endif %}
+                  {% endwith %}
+                </div>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+
+          <!-- 6. Finishing & Packing -->
+          <div class="accordion-item">
+            <h2 class="accordion-header" id="finishingHeading">
+              <button class="accordion-button {% if not finishing_packing %}collapsed{% endif %}" type="button"
+                data-bs-toggle="collapse" data-bs-target="#finishingCollapse" aria-expanded="false"
+                aria-controls="finishingCollapse">
+                <i class="bi bi-box-seam me-2"></i> Finishing & Packing
+                {% if finishing_packing %}
+                <span class="badge bg-success ms-2">Completed</span>
+                {% else %}
+                <span class="badge bg-secondary ms-2">Pending</span>
+                {% endif %}
+              </button>
+            </h2>
+            <div id="finishingCollapse" class="accordion-collapse collapse {% if finishing_packing %}show{% endif %}"
+              aria-labelledby="finishingHeading">
+              <div class="accordion-body">
+                {% if finishing_packing %}
+                <h5 class="mb-3">Finishing & Packing Details</h5>
+                <div class="table-responsive">
+                  <table class="table table-bordered table-striped table-hover">
+                    <tbody>
+                      <tr>
+                        <th scope="row">Style ID</th>
+                        <td>{{ order.style_id }}</td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Added By</th>
+                        <td>{{finishing_packing.user}}</td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Issued Challan Date</th>
+                        <td>{{ finishing_packing.issued_challan_date|date:"F d, Y" }}</td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Issued Challan #</th>
+                        <td>{{ finishing_packing.issued_challan_number }}</td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Job Worker Name</th>
+                        <td>{{ finishing_packing.job_worker_name }}</td>
+                      </tr>
+                      <tr>
+                      <tr>
+                        <th scope="row">Issued Challan Quantity</th>
+                        <td>{{ finishing_packing.issued_challan_quantity }}</td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Packed Quantity</th>
+                        <td>{{ finishing_packing.packed_quantity }}</td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Rejected</th>
+                        <td>{{ finishing_packing.rejected }}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <h5 class="mb-3">Finishing & Packing Invoice Details</h5>
+                <div class="table-responsive">
+                  <table class="table table-bordered table-striped table-hover">
+                    <tbody>
+                      <tr>
+                        <th scope="row">Rate</th>
+                        <td>₹ {{ finishing_packing.rate|indian_number_format }}</td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Amount</th>
+                        <td>₹ {{ finishing_packing.amount|indian_number_format }}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                {% else %}
+                <div class="text-center py-3">
+                  <p class="text-muted">No finishing and packing information available yet.</p>
+                  {% with status_position=order.status|get_status_position %}
+                  {% if not order.status|get_status_position == 5 %}
+                  <p class="text-muted">Add previous data before adding this one.</p>
+                  {% else %}
+                  <a href="{% url 'addfinishingandpacking' order.id %}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle"></i> Add Finishing & Packing Details
+                  </a>
+                  {% endif %}
+                  {% endwith %}
+                </div>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+
+          <!-- 7. Dispatch -->
+          <div class="accordion-item">
+            <h2 class="accordion-header" id="dispatchHeading">
+              <button class="accordion-button {% if not dispatch %}collapsed{% endif %}" type="button"
+                data-bs-toggle="collapse" data-bs-target="#dispatchCollapse" aria-expanded="false"
+                aria-controls="dispatchCollapse">
+                <i class="bi bi-truck me-2"></i> Dispatch
+                {% if dispatch %}
+                <span class="badge bg-success ms-2">Completed</span>
+                {% else %}
+                <span class="badge bg-secondary ms-2">Pending</span>
+                {% endif %}
+              </button>
+            </h2>
+            <div id="dispatchCollapse" class="accordion-collapse collapse {% if dispatch %}show{% endif %}"
+              aria-labelledby="dispatchHeading">
+              <div class="accordion-body">
+                {% if dispatch %}
+                <h5 class="mb-3">Dispatch Details</h5>
+                <div class="table-responsive">
+                  <table class="table table-bordered table-striped table-hover">
+                    <tbody>
+                      <tr>
+                        <th scope="row">Style ID</th>
+                        <td>{{ order.style_id }}</td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Added By</th>
+                        <td>{{dispatch.user}}</td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Dispatch Date</th>
+                        <td>{{ dispatch.dispatch_date|date:"F d, Y" }}</td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Dispatched_to</th>
+                        <td>{{ dispatch.dispatched_to }}</td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Quantity</th>
+                        <td>{{ dispatch.quantity }}</td>
+                      </tr>
+                      <tr>
+                      <tr>
+                        <th scope="row">Delivery note</th>
+                        <td>{{ dispatch.delivery_note }}</td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Invoice #</th>
+                        <td>{{ dispatch.invoice_number }}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                {% else %}
+                <div class="text-center py-3">
+                  <p class="text-muted">No dispatch information available yet.</p>
+                  {% with status_position=order.status|get_status_position %}
+                  {% if not order.status|get_status_position == 6 %}
+                  <p class="text-muted">Add previous data before adding this one.</p>
+                  {% else %}
+                  <a href="{% url 'adddispatch' order.id %}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle"></i> Add Dispatch Details
+                  </a>
+                  {% endif %}
+                  {% endwith %}
+                </div>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="row mt-4 mb-5">
+      <div class="col-12">
+        <div class="d-flex justify-content-between">
+          <a href="{% url 'index' %}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Orders
+          </a>
+          <div>
+            <a href="{% url 'orderdetail' order.id %}" class="btn btn-warning">
+              <i class="bi bi-pencil"></i> Edit Order
+            </a>
+            <a href="{% url 'orderdetail' order.id %}" class="btn btn-success ms-2">
+              <i class="bi bi-arrow-clockwise"></i> Update Status
+            </a>
+            <button type="button" class="btn btn-primary ms-2" onclick="window.print()">
+              <i class="bi bi-printer"></i> Print
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CSS for Progress Bar - Add to your CSS file -->
+  <style>
+    .progress-track {
+      margin: 0 auto;
+      position: relative;
+      padding: 0 10px;
+    }
+
+    .progressbar {
+      counter-reset: step;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .progressbar li {
+      list-style-type: none;
+      position: relative;
+      text-align: center;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .progressbar li:before {
+      content: counter(step);
+      counter-increment: step;
+      width: 30px;
+      height: 30px;
+      line-height: 30px;
+      border: 1px solid #ddd;
+      display: block;
+      text-align: center;
+      margin: 0 auto 10px auto;
+      border-radius: 50%;
+      background-color: #2b3035;
+      /* Light gray background for pending steps */
+      color: #fff;
+      /* Darker text for contrast */
+      z-index: 1;
+    }
+
+    .progressbar li:after {
+      content: '';
+      position: absolute;
+      width: 100%;
+      height: 2px;
+      background-color: #ddd;
+      top: 15px;
+      left: -50%;
+      z-index: 0;
+    }
+
+    .progressbar li:first-child:after {
+      content: none;
+    }
+
+    .progressbar li.active {
+      color: green;
+    }
+
+    .progressbar li.active:before {
+      border-color: green;
+      background-color: green;
+      color: white;
+    }
+
+    .progressbar li.active+li:after {
+      background-color: green;
+    }
+  </style>
+  {% endblock body %}

@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% load crispy_forms_tags %}
+
+{% block title %}
+Add Order Details
+{% endblock title %}
+
+{% block body %}
+
+<div class="container">
+    <div class="card d-block mx-auto m-4" style="max-width: 500px; width: 100%;">
+        <div class="card-body">
+            <h3>Add order</h3>
+            <form method="POST">
+                {% csrf_token %}
+                {{ form|crispy }}
+                <button type="submit" class="btn btn-primary">Add Order</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock body %}
