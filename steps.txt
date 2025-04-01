@@ -17,13 +17,17 @@ Dispatch
 8. Dispatched
 """
 
-Done until
-viewing all orders
-adding order
-
 TODO
 
-create each form page
-check if each form add button is showing correctly
-add pagination on homepage
-create filter by status on homepage
+REMOVE EXTRA VIEWS AND URLS AFTER DEV
+
+Create search order
+create filter order
+create custom name and icon branding
+on homepage limit orders to 10 most recent
+add challan generation and printing
+add cloudinary integration
+export to csv
+order close date
+order detail size wize: XS, S, M, L, XL, XXL, XXXL
+Dispatched detail printing according to packing slip

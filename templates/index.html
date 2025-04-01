@@ -6,9 +6,69 @@
 Showing all orders
 {% endblock title %}
 
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock head %}
+
 {% block body %}
 
-<div class="container">
+<div class="container my-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3>Analytics</h3>
+        <a href="/addorder" class="btn btn-success">Add Order</a>
+    </div>
+    <div class="row">
+        <div class="col-sm-6 col-lg-3">
+            <div class="alert alert-info" role="alert">
+                <h5 class="alert-heading"><i class="bi bi-cart4 me-2"></i>Total Orders</h5>
+                <h2>{{total_orders}}</h2>
+              </div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <div class="alert alert-success" role="alert">
+                <h5 class="alert-heading"><i class="bi bi-currency-rupee me-2"></i>Total Revenue</h5>
+                <h2>&#x20B9; {{total_revenue|indian_number_format}}</h2>
+              </div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <div class="alert alert-warning" role="alert">
+                <h5 class="alert-heading"><i class="bi bi-gear me-2"></i>In Production</h5>
+                <h2>{{in_production}}</h2>
+              </div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <div class="alert alert-primary" role="alert">
+                <h5 class="alert-heading"><i class="bi bi-truck me-2"></i>Dispatched</h5>
+                <h2>{{dispatched_orders}}</h2>
+              </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-lg-6 col-md-12">
+            <div class="card p-4 my-2">
+                <h4 class="mb-4">Order status</h4>
+                <canvas id="statusChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+        <div class="col-lg-6 col-md-12">
+            <div class="card p-4 my-2">
+                <h4 class="mb-4">Revenue activity</h4>
+                <canvas id="revenueChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+        <div class="col-lg-6 col-md-12">
+            <div class="card p-4 my-2">
+                <h4 class="mb-4">Orders aggregated daily</h4>
+                <canvas id="weeklyChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+        <div class="col-lg-6 col-md-12">
+            <div class="card p-4 my-2">
+                <h4 class="mb-4">Most pending orders</h4>
+                <canvas id="waitingTimeChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </div>
     <div class="container my-5">
         <!-- Card for displaying orders -->
         <div class="card shadow-sm">
@@ -67,4 +127,157 @@ Showing all orders
     </div>
     
 </div>
+<script>
+    const ctx = document.getElementById('statusChart').getContext('2d');
+    const statusChart = new Chart(ctx, {
+        type: 'bar',  // Type of chart (bar chart)
+        data: {
+            labels: {{ statuses|safe }},  // Statuses from the context
+            datasets: [{
+                label: 'Number of Orders',
+                data: {{ order_counts|safe }},  // Order counts from the context
+                // backgroundColor: 'rgba(54, 162, 235, 0.2)',  // Bar color
+                // borderColor: 'rgba(54, 162, 235, 1)',  // Border color
+                backgroundColor: 'rgba(110, 223, 246, 0.1)',
+                borderColor: 'rgba(110, 223, 246, 1)',
+                borderWidth: 1,
+            }]
+        },
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            },
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                },
+                tooltip: {
+                    enabled: true,
+                },
+            }
+        }
+    });
+</script>
+<script>
+    const ctx2 = document.getElementById('revenueChart').getContext('2d');
+    const revenueChart = new Chart(ctx2, {
+        type: 'line', // The type of chart
+        data: {
+            labels: {{ dates|safe }},  // Dates from the context
+            datasets: [{
+                label: 'Daily Revenue',
+                data: {{ revenues|safe }},  // Revenue data from the context
+                borderColor: 'rgba(117, 183, 152, 1)',
+                backgroundColor: 'rgba(117, 183, 152, 0.1)',
+                borderWidth: 1,
+                fill: true,
+            }]
+        },
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            },
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                },
+                tooltip: {
+                    enabled: true,
+                },
+            },
+        }
+    });
+</script>
+<script>
+    var ctx3 = document.getElementById('weeklyChart').getContext('2d');
+    var weeklyChart = new Chart(ctx3, {
+        type: 'bar',
+        data: {
+            labels: {{ week_days|safe }},
+            datasets: [{
+                // label: {{ week_days_with_counts|safe }},
+                label: 'Orders received each day this month',
+                data: {{ day_counts|safe }},
+                backgroundColor: 'rgba(255, 218, 106, 0.1)',
+                borderColor: 'rgba(255, 218, 106, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+                plugins: {
+                    tooltip: {
+                        // Show tooltips only for the hovered data point
+                        enabled: true,  // Enable tooltips
+                        mode: 'nearest', // Tooltip will be activated on the nearest item (bar)
+                        intersect: true, // Tooltip is shown only when hovering directly over a bar
+                        callbacks: {
+                            label: function(tooltipItem) {
+                                // Display the custom label (for example, day name and count)
+                                var label = tooltipItem.label || '';
+                                var count = tooltipItem.raw || 0;
+                                return `${label}: ${count} Orders`;
+                            }
+                        }
+                    },
+                    legend: {
+                        display: true,
+                        position: 'bottom'
+                    }
+                },
+            scales: {
+                // x: {
+                //     categoryPercentage: 0.1, // Adjust this value to reduce space between bars
+                //     barPercentage: 0.1,      // Adjust this value to reduce the bar width
+                //     barThickness: 2,        // Set a fixed width for the bars
+                // },
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+</script>
+<script>
+    const ctx4 = document.getElementById('waitingTimeChart').getContext('2d');
+    const waitingTimeChart = new Chart(ctx4, {
+        type: 'bar',  // Bar chart
+        data: {
+            labels: {{ order_labels|safe }},  // Renamed context variable
+            datasets: [{
+                label: 'Waiting Time (Days)',
+                data: {{ waiting_time_in_days|safe }},  // Renamed context variable
+                backgroundColor: 'rgba(54, 162, 235, 0.2)',  // Bar color
+                borderColor: 'rgba(54, 162, 235, 1)',  // Border color
+                borderWidth: 1,
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Waiting Time (Days)',
+                    },
+                },
+            },
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'bottom',
+                },
+                tooltip: {
+                    enabled: true,
+                },
+            }
+        }
+    });
+</script>
 {% endblock body %}
