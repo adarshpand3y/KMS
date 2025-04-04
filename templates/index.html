@@ -69,15 +69,36 @@ Showing all orders
             </div>
         </div>
     </div>
-    <div class="container my-5">
+    <div class="my-3">
         <!-- Card for displaying orders -->
-        <div class="card shadow-sm">
-            <div class="card-header text-center text-white">
-                <h3>Orders List</h3>
-            </div>
-            <div class="card-body">
                 <!-- Button to add new order (Optional) -->
-                <a href="{% url "addorder" %}" class="btn btn-success mb-3">Add New Order</a>
+                 <div class="d-flex align-items-center justify-content-between my-3 flex-wrap">
+                    <h3>Recent orders</h3>
+                    <div class="d-flex align-items-center justify-content-between flex-wrap my-2">
+                        <a href="{% url 'addorder' %}" class="btn btn-success me-2">Add Order</a>
+                        <div class="dropdown me-2">
+                            <a class="btn btn-success dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                              Filter by
+                            </a>
+                          
+                            <ul class="dropdown-menu">
+                              <li><a class="dropdown-item" href="{% url "filter_by_status" "pending" %}">Pending</a></li>
+                              <li><a class="dropdown-item" href="{% url "filter_by_status" "fabric_purchased" %}">Fabric Purchased</a></li>
+                              <li><a class="dropdown-item" href="{% url "filter_by_status" "printing_and_dyeing" %}">Dyeing/Printing</a></li>
+                              <li><a class="dropdown-item" href="{% url "filter_by_status" "cloth_cutting" %}">Cloth cutting</a></li>
+                              <li><a class="dropdown-item" href="{% url "filter_by_status" "stitching" %}">Stitching</a></li>
+                              <li><a class="dropdown-item" href="{% url "filter_by_status" "extra_work" %}">Extra Work</a></li>
+                              <li><a class="dropdown-item" href="{% url "filter_by_status" "finishing_and_packing" %}">Finishing/Packing</a></li>
+                              <li><a class="dropdown-item" href="{% url "filter_by_status" "dispatched" %}">Dispatched</a></li>
+                            </ul>
+                          </div>
+                        <form class="d-flex align-items-center justify-content-between my-2 me-0">
+                            <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
+                            <button class="btn btn-outline-success me-0" type="submit">Search</button>
+                          </form>
+                    </div>
+                 </div>
+                <!-- <a href="{% url "addorder" %}" class="btn btn-success mb-3">Add New Order</a> -->
                 
                 <!-- Orders Table -->
                 <div class="table-responsive">
@@ -122,8 +143,6 @@ Showing all orders
                         </tbody>
                     </table>
                 </div>
-            </div>
-        </div>
     </div>
     
 </div>

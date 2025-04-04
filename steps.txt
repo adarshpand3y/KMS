@@ -21,6 +21,7 @@ TODO
 
 REMOVE EXTRA VIEWS AND URLS AFTER DEV
 
+add extra work model, form and view and add it to the step
 Create search order
 create filter order
 create custom name and icon branding
@@ -31,3 +32,19 @@ export to csv
 order close date
 order detail size wize: XS, S, M, L, XL, XXL, XXXL
 Dispatched detail printing according to packing slip
+
+
+
+==================================================
+
+# Generate 50 orders
+python manage.py generate_fake_data --orders 50
+
+# Associate records with a specific user
+python manage.py generate_fake_data --user admin
+
+# Generate complete lifecycle for half of the orders
+python manage.py generate_fake_data --complete
+
+# Combine options
+python manage.py generate_fake_data --orders 30 --user admin --complete

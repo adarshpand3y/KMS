@@ -19,103 +19,9 @@ from mainapp.models import (
 
 class Command(BaseCommand):
     help = 'Generates fake data for clothing production management system'
-    
-    # Configuration variables
-    DEFAULT_NUM_ORDERS = 100
-    
-    # Fabric details options
-    FABRIC_TYPES = ['Cotton', 'Linen', 'Silk', 'Wool', 'Polyester', 'Rayon']
-    
-    # Extra work options
-    EXTRA_WORK_TYPES = ['Embroidery', 'Beading', 'Sequins', 'Appliqué', 'Pleating', 'Printing']
-    
-    # Order parameters
-    ORDER_QUANTITY_MIN = 100
-    ORDER_QUANTITY_MAX = 500
-    ORDER_RATE_MIN = 100
-    ORDER_RATE_MAX = 500
-    
-    # Production timeline parameters (days)
-    FABRIC_PURCHASE_DAYS_MIN = 1
-    FABRIC_PURCHASE_DAYS_MAX = 3
-    
-    PRINTING_DYEING_DAYS_MIN = 3
-    PRINTING_DYEING_DAYS_MAX = 7
-    
-    CLOTH_CUTTING_DAYS_MIN = 2
-    CLOTH_CUTTING_DAYS_MAX = 4
-    
-    STITCHING_DAYS_MIN = 4
-    STITCHING_DAYS_MAX = 10
-    
-    EXTRA_WORK_DAYS_MIN = 2
-    EXTRA_WORK_DAYS_MAX = 5
-    
-    FINISHING_PACKING_DAYS_MIN = 1
-    FINISHING_PACKING_DAYS_MAX = 3
-    
-    DISPATCH_DAYS_MIN = 1
-    DISPATCH_DAYS_MAX = 2
-    
-    # Challan processing times
-    FABRIC_CHALLAN_DAYS_MIN = 1
-    FABRIC_CHALLAN_DAYS_MAX = 3
-    
-    DYEING_RECEIVE_DAYS_MIN = 2
-    DYEING_RECEIVE_DAYS_MAX = 5
-    
-    CUTTING_RECEIVE_DAYS_MIN = 1
-    CUTTING_RECEIVE_DAYS_MAX = 3
-    
-    STITCHING_RECEIVE_DAYS_MIN = 3
-    STITCHING_RECEIVE_DAYS_MAX = 7
-    
-    EXTRA_WORK_RECEIVE_DAYS_MIN = 2
-    EXTRA_WORK_RECEIVE_DAYS_MAX = 5
-    
-    # Material quantity factors
-    FABRIC_QUANTITY_FACTOR_MIN = 1.1  # Need more fabric than final quantity
-    FABRIC_QUANTITY_FACTOR_MAX = 1.3
-    
-    FABRIC_CHALLAN_FACTOR_MIN = 0.9  # Some fabric might be held back
-    FABRIC_CHALLAN_FACTOR_MAX = 1.0
-    
-    SHRINKAGE_MIN = 1.0  # Percentage
-    SHRINKAGE_MAX = 10.0
-    
-    CUTTING_YIELD_FACTOR_MIN = 0.9  # Material lost in cutting
-    CUTTING_YIELD_FACTOR_MAX = 0.98
-    
-    STITCHING_YIELD_FACTOR_MIN = 0.92  # Rejected pieces in stitching
-    STITCHING_YIELD_FACTOR_MAX = 0.98
-    
-    EXTRA_WORK_YIELD_FACTOR_MIN = 0.95  # Pieces passing extra work
-    EXTRA_WORK_YIELD_FACTOR_MAX = 0.99
-    
-    FINISHING_YIELD_FACTOR_MIN = 0.95  # Final inspection rejection rate
-    FINISHING_YIELD_FACTOR_MAX = 0.99
-    
-    # Price ranges
-    FABRIC_RATE_MIN = 50
-    FABRIC_RATE_MAX = 200
-    
-    DYEING_RATE_MIN = 30
-    DYEING_RATE_MAX = 100
-    
-    CUTTING_RATE_MIN = 10
-    CUTTING_RATE_MAX = 50
-    
-    STITCHING_RATE_MIN = 50
-    STITCHING_RATE_MAX = 200
-    
-    EXTRA_WORK_RATE_MIN = 20
-    EXTRA_WORK_RATE_MAX = 100
-    
-    FINISHING_RATE_MIN = 10
-    FINISHING_RATE_MAX = 30
 
     def add_arguments(self, parser):
-        parser.add_argument('--orders', type=int, default=self.DEFAULT_NUM_ORDERS, help='Number of orders to generate')
+        parser.add_argument('--orders', type=int, default=100, help='Number of orders to generate')
         parser.add_argument('--user', type=str, default=None, help='Username to associate with records')
         parser.add_argument('--complete', action='store_true', help='Generate complete lifecycle for some orders')
 
@@ -141,15 +47,15 @@ class Command(BaseCommand):
         orders = []
         for _ in range(num_orders):
             # Create a random date within the current month
-            order_date = fake.date_between(start_date=first_day, end_date=min(last_day, today)) # Create orders only up to today
-            # order_date = fake.date_between(start_date=first_day, end_date=last_day) # Create orders for the entire month
+            # order_date = fake.date_between(start_date=first_day, end_date=last_day) # Random date within the month
+            order_date = fake.date_between(start_date=first_day, end_date=min(last_day, today)) # Random date within the month or today
             
             order = Order(
-                order_date=order_date,
+                order_date=order_date,  # Explicitly set order date
                 style_id=f'STY-{fake.bothify(text="??###")}',
                 order_received_from=fake.company(),
-                quantity=random.randint(self.ORDER_QUANTITY_MIN, self.ORDER_QUANTITY_MAX),
-                rate=random.randint(self.ORDER_RATE_MIN, self.ORDER_RATE_MAX),
+                quantity=random.randint(100, 500),
+                rate=random.randint(200, 2000),
                 user=user
             )
             order.save()
@@ -194,57 +100,50 @@ class Command(BaseCommand):
         # If very few days remain, compress the timeline
         time_compression = max(1, remaining_days / 30)  # Scale factor for timeline compression
         
-        # Add days for fabric purchase (scaled)
-        days_to_add = max(1, int(random.randint(self.FABRIC_PURCHASE_DAYS_MIN, 
-                                               self.FABRIC_PURCHASE_DAYS_MAX) * time_compression))
+        # Add 1-3 days for fabric purchase (scaled)
+        days_to_add = max(1, int(random.randint(1, 3) * time_compression))
         current_date += timedelta(days=days_to_add)
         if last_day and current_date > last_day.date():
             current_date = last_day.date()
         fabric = self._create_fabric_purchased(order, fake, user, current_date)
         
-        # Add days for printing and dyeing (scaled)
-        days_to_add = max(1, int(random.randint(self.PRINTING_DYEING_DAYS_MIN, 
-                                               self.PRINTING_DYEING_DAYS_MAX) * time_compression))
+        # Add 3-7 days for printing and dyeing (scaled)
+        days_to_add = max(1, int(random.randint(3, 7) * time_compression))
         current_date += timedelta(days=days_to_add)
         if last_day and current_date > last_day.date():
             current_date = last_day.date()
         pd = self._create_printing_and_dyeing(order, fake, user, current_date)
         
-        # Add days for cloth cutting (scaled)
-        days_to_add = max(1, int(random.randint(self.CLOTH_CUTTING_DAYS_MIN, 
-                                               self.CLOTH_CUTTING_DAYS_MAX) * time_compression))
+        # Add 2-4 days for cloth cutting (scaled)
+        days_to_add = max(1, int(random.randint(2, 4) * time_compression))
         current_date += timedelta(days=days_to_add)
         if last_day and current_date > last_day.date():
             current_date = last_day.date()
         cutting = self._create_cloth_cutting(order, fake, user, current_date)
         
-        # Add days for stitching (scaled)
-        days_to_add = max(1, int(random.randint(self.STITCHING_DAYS_MIN, 
-                                               self.STITCHING_DAYS_MAX) * time_compression))
+        # Add 4-10 days for stitching (scaled)
+        days_to_add = max(1, int(random.randint(4, 10) * time_compression))
         current_date += timedelta(days=days_to_add)
         if last_day and current_date > last_day.date():
             current_date = last_day.date()
         stitching = self._create_stitching(order, fake, user, current_date)
         
-        # Add days for extra work (scaled)
-        days_to_add = max(1, int(random.randint(self.EXTRA_WORK_DAYS_MIN, 
-                                               self.EXTRA_WORK_DAYS_MAX) * time_compression))
+        # Add 2-5 days for extra work (scaled)
+        days_to_add = max(1, int(random.randint(2, 5) * time_compression))
         current_date += timedelta(days=days_to_add)
         if last_day and current_date > last_day.date():
             current_date = last_day.date()
         extra = self._create_extra_work(order, fake, user, current_date)
         
-        # Add days for finishing and packing (scaled)
-        days_to_add = max(1, int(random.randint(self.FINISHING_PACKING_DAYS_MIN, 
-                                               self.FINISHING_PACKING_DAYS_MAX) * time_compression))
+        # Add 1-3 days for finishing and packing (scaled)
+        days_to_add = max(1, int(random.randint(1, 3) * time_compression))
         current_date += timedelta(days=days_to_add)
         if last_day and current_date > last_day.date():
             current_date = last_day.date()
         finishing = self._create_finishing_and_packing(order, fake, user, current_date)
         
-        # Add days for dispatch (scaled)
-        days_to_add = max(1, int(random.randint(self.DISPATCH_DAYS_MIN, 
-                                               self.DISPATCH_DAYS_MAX) * time_compression))
+        # Add 1-2 days for dispatch (scaled)
+        days_to_add = max(1, int(random.randint(1, 2) * time_compression))
         current_date += timedelta(days=days_to_add)
         if last_day and current_date > last_day.date():
             current_date = last_day.date()
@@ -260,22 +159,22 @@ class Command(BaseCommand):
             date = fake.date_between(start_date=order.order_date, end_date=max_date)
             
         # Ensure challan date doesn't exceed month end
-        challan_days = random.randint(self.FABRIC_CHALLAN_DAYS_MIN, self.FABRIC_CHALLAN_DAYS_MAX)
+        challan_days = random.randint(1, 3)
         challan_date = date + timedelta(days=challan_days)
         if last_day and challan_date > last_day.date():
             challan_date = last_day.date()
         
-        quantity = order.quantity * random.uniform(self.FABRIC_QUANTITY_FACTOR_MIN, self.FABRIC_QUANTITY_FACTOR_MAX)
-        challan_quantity = quantity * random.uniform(self.FABRIC_CHALLAN_FACTOR_MIN, self.FABRIC_CHALLAN_FACTOR_MAX)
+        quantity = order.quantity * random.uniform(1.1, 1.3)  # Need more fabric than final quantity
+        challan_quantity = quantity * random.uniform(0.9, 1.0)  # Some fabric might be held back
         
         fabric = FabricPurchased(
             order=order,
             fabric_purchase_date=date,
             purchased_from=fake.company(),
             quantity=int(quantity),
-            rate=random.uniform(self.FABRIC_RATE_MIN, self.FABRIC_RATE_MAX),
+            rate=random.uniform(50, 200),
             invoice_number=f'INV-{fake.bothify(text="######")}',
-            fabric_detail=random.choice(self.FABRIC_TYPES),
+            fabric_detail=random.choice(['Cotton', 'Linen', 'Silk', 'Wool', 'Polyester', 'Rayon']),
             fabric_length=f'{random.randint(40, 60)}"{random.choice(["", "/", "x"])}{random.randint(40, 60)}"',
             fabric_dyer=fake.company(),
             challan_number=f'CHN-{fake.bothify(text="######")}',
@@ -294,7 +193,7 @@ class Command(BaseCommand):
             date = fake.date_between(start_date=order.order_date, end_date=max_date)
             
         # Ensure receive date doesn't exceed month end
-        receive_days = random.randint(self.DYEING_RECEIVE_DAYS_MIN, self.DYEING_RECEIVE_DAYS_MAX)
+        receive_days = random.randint(2, 5)
         receive_date = date + timedelta(days=receive_days)
         if last_day and receive_date > last_day.date():
             receive_date = last_day.date()
@@ -304,9 +203,9 @@ class Command(BaseCommand):
             fabric = FabricPurchased.objects.filter(order=order).latest('fabric_purchase_date')
             challan_quantity = fabric.issued_challan_quantity
         except FabricPurchased.DoesNotExist:
-            challan_quantity = order.quantity * random.uniform(self.FABRIC_QUANTITY_FACTOR_MIN, self.FABRIC_QUANTITY_FACTOR_MAX)
+            challan_quantity = order.quantity * random.uniform(1.1, 1.3)
         
-        shrinkage = random.uniform(self.SHRINKAGE_MIN, self.SHRINKAGE_MAX)
+        shrinkage = random.uniform(1, 10)
         received_qty = int(challan_quantity * (1 - shrinkage/100))
         
         pd = PrintingAndDyeing(
@@ -314,14 +213,14 @@ class Command(BaseCommand):
             issued_challan_date=date,
             issued_challan_number=f'PDC-{fake.bothify(text="######")}',
             dyer_printer_name=fake.company(),
-            fabric_detail=random.choice(self.FABRIC_TYPES),
+            fabric_detail=random.choice(['Cotton', 'Linen', 'Silk', 'Wool', 'Polyester', 'Rayon']),
             fabric_length=f'{random.randint(40, 60)}"{random.choice(["", "/", "x"])}{random.randint(40, 60)}"',
             issued_challan_quantity=int(challan_quantity),
             shrinkage_in_percentage=shrinkage,
             received_quantity=received_qty,
             received_date=receive_date,
             received_challan_number=f'RCV-{fake.bothify(text="######")}',
-            rate=random.uniform(self.DYEING_RATE_MIN, self.DYEING_RATE_MAX),
+            rate=random.uniform(30, 100),
             user=user
         )
         pd.save()
@@ -335,7 +234,7 @@ class Command(BaseCommand):
             date = fake.date_between(start_date=order.order_date, end_date=max_date)
             
         # Ensure receive date doesn't exceed month end
-        receive_days = random.randint(self.CUTTING_RECEIVE_DAYS_MIN, self.CUTTING_RECEIVE_DAYS_MAX)
+        receive_days = random.randint(1, 3)
         receive_date = date + timedelta(days=receive_days)
         if last_day and receive_date > last_day.date():
             receive_date = last_day.date()
@@ -348,20 +247,20 @@ class Command(BaseCommand):
             challan_quantity = order.quantity * random.uniform(1.0, 1.1)
         
         # Some material may be lost in cutting
-        received_qty = int(challan_quantity * random.uniform(self.CUTTING_YIELD_FACTOR_MIN, self.CUTTING_YIELD_FACTOR_MAX))
+        received_qty = int(challan_quantity * random.uniform(0.9, 0.98))
         
         cutting = ClothCutting(
             order=order,
             issued_challan_date=date,
             issued_challan_number=f'CUT-{fake.bothify(text="######")}',
             job_worker_name=fake.company(),
-            fabric_detail=random.choice(self.FABRIC_TYPES),
+            fabric_detail=random.choice(['Cotton', 'Linen', 'Silk', 'Wool', 'Polyester', 'Rayon']),
             fabric_length=f'{random.randint(40, 60)}"{random.choice(["", "/", "x"])}{random.randint(40, 60)}"',
             issued_challan_quantity=int(challan_quantity),
             received_quantity=received_qty,
             received_date=receive_date,
             received_challan_number=f'RCV-{fake.bothify(text="######")}',
-            rate=random.uniform(self.CUTTING_RATE_MIN, self.CUTTING_RATE_MAX),
+            rate=random.uniform(10, 50),
             user=user
         )
         cutting.save()
@@ -375,7 +274,7 @@ class Command(BaseCommand):
             date = fake.date_between(start_date=order.order_date, end_date=max_date)
             
         # Ensure receive date doesn't exceed month end
-        receive_days = random.randint(self.STITCHING_RECEIVE_DAYS_MIN, self.STITCHING_RECEIVE_DAYS_MAX)
+        receive_days = random.randint(3, 7)
         receive_date = date + timedelta(days=receive_days)
         if last_day and receive_date > last_day.date():
             receive_date = last_day.date()
@@ -388,7 +287,7 @@ class Command(BaseCommand):
             challan_quantity = order.quantity * random.uniform(0.95, 1.05)
         
         # Some pieces may be rejected during stitching
-        received_qty = int(challan_quantity * random.uniform(self.STITCHING_YIELD_FACTOR_MIN, self.STITCHING_YIELD_FACTOR_MAX))
+        received_qty = int(challan_quantity * random.uniform(0.92, 0.98))
         
         stitching = Stitching(
             order=order,
@@ -398,7 +297,7 @@ class Command(BaseCommand):
             issued_challan_quantity=int(challan_quantity),
             received_quantity=received_qty,
             received_date=receive_date,
-            rate=random.uniform(self.STITCHING_RATE_MIN, self.STITCHING_RATE_MAX),
+            rate=random.uniform(50, 200),
             user=user
         )
         stitching.save()
@@ -412,7 +311,7 @@ class Command(BaseCommand):
             date = fake.date_between(start_date=order.order_date, end_date=max_date)
             
         # Ensure receive date doesn't exceed month end
-        receive_days = random.randint(self.EXTRA_WORK_RECEIVE_DAYS_MIN, self.EXTRA_WORK_RECEIVE_DAYS_MAX)
+        receive_days = random.randint(2, 5)
         receive_date = date + timedelta(days=receive_days)
         if last_day and receive_date > last_day.date():
             receive_date = last_day.date()
@@ -425,18 +324,18 @@ class Command(BaseCommand):
             challan_quantity = order.quantity * random.uniform(0.9, 1.0)
         
         # Most pieces should pass extra work
-        received_qty = int(challan_quantity * random.uniform(self.EXTRA_WORK_YIELD_FACTOR_MIN, self.EXTRA_WORK_YIELD_FACTOR_MAX))
+        received_qty = int(challan_quantity * random.uniform(0.95, 0.99))
         
         extra_work = ExtraWork(
             order=order,
             issued_challan_date=date,
             issued_challan_number=f'EXT-{fake.bothify(text="######")}',
             job_worker_name=fake.company(),
-            extra_work_name=random.choice(self.EXTRA_WORK_TYPES),
+            extra_work_name=random.choice(['Embroidery', 'Beading', 'Sequins', 'Appliqué', 'Pleating', 'Printing']),
             issued_challan_quantity=int(challan_quantity),
             received_quantity=received_qty,
             received_date=receive_date,
-            rate=random.uniform(self.EXTRA_WORK_RATE_MIN, self.EXTRA_WORK_RATE_MAX),
+            rate=random.uniform(20, 100),
             user=user
         )
         extra_work.save()
@@ -457,7 +356,7 @@ class Command(BaseCommand):
             challan_quantity = order.quantity * random.uniform(0.85, 0.95)
         
         # Some pieces may be rejected during final inspection
-        packed_qty = int(challan_quantity * random.uniform(self.FINISHING_YIELD_FACTOR_MIN, self.FINISHING_YIELD_FACTOR_MAX))
+        packed_qty = int(challan_quantity * random.uniform(0.95, 0.99))
         
         finishing = FinishingAndPacking(
             order=order,
@@ -466,7 +365,7 @@ class Command(BaseCommand):
             job_worker_name=fake.company(),
             issued_challan_quantity=int(challan_quantity),
             packed_quantity=packed_qty,
-            rate=random.uniform(self.FINISHING_RATE_MIN, self.FINISHING_RATE_MAX),
+            rate=random.uniform(10, 30),
             user=user
         )
         finishing.save()

@@ -1,21 +1,11 @@
 from django.contrib import admin
-from .models import Order, FabricPurchased, PrintingAndDyeing, ClothCutting, Stitching, FinishingAndPacking, Dispatch
-
-
-
-
-
-
-
-
-
-from django.contrib import admin
 from .models import (
     Order, 
     FabricPurchased, 
     PrintingAndDyeing, 
     ClothCutting, 
-    Stitching, 
+    Stitching,
+    ExtraWork,
     FinishingAndPacking, 
     Dispatch
 )
@@ -71,6 +61,16 @@ class StitchingAdmin(admin.ModelAdmin):
             obj.user = request.user
         super().save_model(request, obj, form, change)
 
+class ExtraWorkAdmin(admin.ModelAdmin):
+    list_display = ['order', 'job_worker_name', 'extra_work_name', 'issued_challan_quantity', 'rate', 'amount']
+    list_filter = ['extra_work_name']
+    search_fields = ['order__style_id', 'job_worker_name']
+    
+    def save_model(self, request, obj, form, change):
+        if not obj.user:
+            obj.user = request.user
+        super().save_model(request, obj, form, change)
+
 class FinishingAndPackingAdmin(admin.ModelAdmin):
     list_display = ['order', 'job_worker_name', 'issued_challan_quantity', 'packed_quantity', 'rejected']
     list_filter = ['issued_challan_date']
@@ -97,5 +97,6 @@ admin.site.register(FabricPurchased, FabricPurchasedAdmin)
 admin.site.register(PrintingAndDyeing, PrintingAndDyeingAdmin)
 admin.site.register(ClothCutting, ClothCuttingAdmin)
 admin.site.register(Stitching, StitchingAdmin)
+admin.site.register(ExtraWork, ExtraWorkAdmin)
 admin.site.register(FinishingAndPacking, FinishingAndPackingAdmin)
 admin.site.register(Dispatch, DispatchAdmin)

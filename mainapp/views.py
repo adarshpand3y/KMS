@@ -11,60 +11,60 @@ from django.contrib.auth.models import User
 import random
 # from django.utils import timezone
 
-from .models import Order, FabricPurchased, PrintingAndDyeing, ClothCutting, Stitching, FinishingAndPacking, Dispatch
-from .forms import OrderForm, FabricPurchasedForm, PrintingAndDyeingForm, ClothCuttingForm, StitchingForm, FinishingAndPackingForm, DispatchForm
+from .models import Order, FabricPurchased, PrintingAndDyeing, ClothCutting, Stitching, ExtraWork, FinishingAndPacking, Dispatch
+from .forms import OrderForm, FabricPurchasedForm, PrintingAndDyeingForm, ClothCuttingForm, StitchingForm, ExtraWorkForm, FinishingAndPackingForm, DispatchForm
 
 # Create your views here.
 
-def test(request):
-    orders = Order.objects.all().order_by('-id')
-    fabric_purchased = FabricPurchased.objects.all().order_by('-id')
-    printing_and_dyeing = PrintingAndDyeing.objects.all().order_by('-id')
-    cloth_cutting = ClothCutting.objects.all().order_by('-id')
-    stitching = Stitching.objects.all().order_by('-id')
-    finishing_and_packing = FinishingAndPacking.objects.all().order_by('-id')
-    dispatch = Dispatch.objects.all().order_by('-id')
+# def test(request):
+#     orders = Order.objects.all().order_by('-id')
+#     fabric_purchased = FabricPurchased.objects.all().order_by('-id')
+#     printing_and_dyeing = PrintingAndDyeing.objects.all().order_by('-id')
+#     cloth_cutting = ClothCutting.objects.all().order_by('-id')
+#     stitching = Stitching.objects.all().order_by('-id')
+#     finishing_and_packing = FinishingAndPacking.objects.all().order_by('-id')
+#     dispatch = Dispatch.objects.all().order_by('-id')
 
-    for order in orders:
-        # Set order date to random date this month
-        order.order_date = datetime.now().replace(day=random.randint(1, 28), month=datetime.now().month, year=datetime.now().year)
-        order.save()
+#     for order in orders:
+#         # Set order date to random date this month
+#         order.order_date = datetime.now().replace(day=random.randint(1, 28), month=datetime.now().month, year=datetime.now().year)
+#         order.save()
 
-        # Set orderid to random string of length 10
-        order.style_id = ''.join(random.choices('ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', k=10))
-        order.save()
+#         # Set orderid to random string of length 10
+#         order.style_id = ''.join(random.choices('ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', k=10))
+#         order.save()
     
-    for fabric in fabric_purchased:
-        # Set fabric purchased date to random date this month
-        fabric.date = datetime.now().replace(day=random.randint(1, 28), month=datetime.now().month, year=datetime.now().year)
-        fabric.save()
+#     for fabric in fabric_purchased:
+#         # Set fabric purchased date to random date this month
+#         fabric.date = datetime.now().replace(day=random.randint(1, 28), month=datetime.now().month, year=datetime.now().year)
+#         fabric.save()
     
-    for printing in printing_and_dyeing:
-        # Set printing and dyeing date to random date this month
-        printing.date = datetime.now().replace(day=random.randint(1, 28), month=datetime.now().month, year=datetime.now().year)
-        printing.save()
+#     for printing in printing_and_dyeing:
+#         # Set printing and dyeing date to random date this month
+#         printing.date = datetime.now().replace(day=random.randint(1, 28), month=datetime.now().month, year=datetime.now().year)
+#         printing.save()
     
-    for cloth in cloth_cutting:
-        # Set cloth cutting date to random date this month
-        cloth.date = datetime.now().replace(day=random.randint(1, 28), month=datetime.now().month, year=datetime.now().year)
-        cloth.save()
+#     for cloth in cloth_cutting:
+#         # Set cloth cutting date to random date this month
+#         cloth.date = datetime.now().replace(day=random.randint(1, 28), month=datetime.now().month, year=datetime.now().year)
+#         cloth.save()
     
-    for stitch in stitching:
-        # Set stitching date to random date this month
-        stitch.date = datetime.now().replace(day=random.randint(1, 28), month=datetime.now().month, year=datetime.now().year)
-        stitch.save()
+#     for stitch in stitching:
+#         # Set stitching date to random date this month
+#         stitch.date = datetime.now().replace(day=random.randint(1, 28), month=datetime.now().month, year=datetime.now().year)
+#         stitch.save()
 
-    for finishing in finishing_and_packing:
-        # Set finishing and packing date to random date this month
-        finishing.date = datetime.now().replace(day=random.randint(1, 28), month=datetime.now().month, year=datetime.now().year)
-        finishing.save()
+#     for finishing in finishing_and_packing:
+#         # Set finishing and packing date to random date this month
+#         finishing.date = datetime.now().replace(day=random.randint(1, 28), month=datetime.now().month, year=datetime.now().year)
+#         finishing.save()
     
-    for dispatch_obj in dispatch:
-        # Set dispatch date to random date this month
-        dispatch_obj.date = datetime.now().replace(day=random.randint(1, 28), month=datetime.now().month, year=datetime.now().year)
-        dispatch_obj.save()
+#     for dispatch_obj in dispatch:
+#         # Set dispatch date to random date this month
+#         dispatch_obj.date = datetime.now().replace(day=random.randint(1, 28), month=datetime.now().month, year=datetime.now().year)
+#         dispatch_obj.save()
 
-    return render(request, 'test.html')
+#     return render(request, 'test.html')
 
 @login_required
 def index(request):
@@ -129,7 +129,7 @@ def index(request):
     )
     
     # Prepare data for the chart
-    statuses = ["Pending", "Fabric Purchased", "Printing and Dyeing", "Cloth Cutting", "Stitching", "Finishing and Packing", "Dispatched"]
+    statuses = ["Pending", "Fabric Purchased", "Printing and Dyeing", "Cloth Cutting", "Stitching", "Extra Work", "Finishing and Packing", "Dispatched"]
     order_counts = [0] * len(statuses)
     for data in status_data:
         status_index = statuses.index(data['status'])
@@ -244,6 +244,7 @@ def order_detail(request, id):
     printing_dyeing = PrintingAndDyeing.objects.filter(order=order).first()
     cloth_cutting = ClothCutting.objects.filter(order=order).first()
     stitching = Stitching.objects.filter(order=order).first()
+    extra_work = ExtraWork.objects.filter(order=order).first()
     finishing_packing = FinishingAndPacking.objects.filter(order=order).first()
     dispatch = Dispatch.objects.filter(order=order).first()
     
@@ -253,6 +254,7 @@ def order_detail(request, id):
         'printing_dyeing': printing_dyeing,
         'cloth_cutting': cloth_cutting, 
         'stitching': stitching,
+        'extra_work': extra_work,
         'finishing_packing': finishing_packing,
         'dispatch': dispatch,
     }
@@ -343,11 +345,32 @@ def add_stitching(request, id):
     return render(request, 'add_stitching.html', {'form': form, 'order': order})
 
 @login_required
-def add_finishingandpacking(request, id):
+def add_extrawork(request, id):
     order = get_object_or_404(Order, id=id)
 
     if order.status != 'Stitching':
-        messages.error(request, 'Finishing and packing details can only be added to orders with status "Stitching".')
+        messages.error(request, 'Extra work details can only be added to orders with status "Stitching".')
+        return redirect('orderdetail', id=id)
+    
+    if request.method == 'POST':
+        form = ExtraWorkForm(request.POST)
+        if form.is_valid():
+            extra_work = form.save(commit=False)
+            extra_work.order = order
+            extra_work.user = request.user
+            extra_work.save()
+            messages.success(request, 'Extra work details added successfully.')
+            return redirect('orderdetail', id=id)
+    else:
+        form = ExtraWorkForm()
+    return render(request, 'add_extrawork.html', {'form': form, 'order': order})
+
+@login_required
+def add_finishingandpacking(request, id):
+    order = get_object_or_404(Order, id=id)
+
+    if order.status != 'Extra Work':
+        messages.error(request, 'Finishing and packing details can only be added to orders with status "Extra Work".')
         return redirect('orderdetail', id=id)
     
     if request.method == 'POST':
@@ -383,3 +406,27 @@ def add_dispatch(request, id):
     else:
         form = DispatchForm()
     return render(request, 'add_dispatch.html', {'form': form, 'order': order})
+
+def filter_by_status(request, status):
+    STATUS = {
+        'pending': 'Pending',
+        'fabric_purchased': 'Fabric Purchased',
+        'printing_and_dyeing': 'Printing and Dyeing',
+        'cloth_cutting': 'Cloth Cutting',
+        'stitching': 'Stitching',
+        'extra_work': 'Extra Work',
+        'finishing_and_packing': 'Finishing and Packing',
+        'dispatched': 'Dispatched',
+        'all': 'All',
+    }
+    status = STATUS.get(status.lower(), 'All')
+    if status == 'All':
+        orders = Order.objects.all()
+    else:
+        orders = Order.objects.filter(status=status)
+    
+    context = {
+        'orders': orders,
+        'status': status,
+    }
+    return render(request, 'filter.html', context)

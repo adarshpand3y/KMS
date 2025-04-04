@@ -14,7 +14,7 @@ def filter_dispatched(orders):
 def filter_in_progress(orders):
     progress_statuses = [
         'Fabric Purchased', 'Printing and Dyeing', 
-        'Cloth Cutting', 'Stitching', 'Finishing and Packing'
+        'Cloth Cutting', 'Stitching', 'Extra Work', 'Finishing and Packing'
     ]
     return [order for order in orders if order.status in progress_statuses]
 

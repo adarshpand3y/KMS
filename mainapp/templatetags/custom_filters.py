@@ -12,8 +12,9 @@ def get_status_position(status):
         'Printing and Dyeing': 3,
         'Cloth Cutting': 4,
         'Stitching': 5,
-        'Finishing and Packing': 6,
-        'Dispatched': 7
+        'Extra Work': 6,
+        'Finishing and Packing': 7,
+        'Dispatched': 8
     }
     return status_positions.get(status, 0)
 

@@ -500,10 +500,6 @@ KMS
                         <td>{{ stitching.job_worker_name }}</td>
                       </tr>
                       <tr>
-                        <th scope="row">Extra Work Name</th>
-                        <td>{{ stitching.extra_work_name }}</td>
-                      </tr>
-                      <tr>
                         <th scope="row">Issued Challan Quantity</th>
                         <td>{{ stitching.issued_challan_quantity }}</td>
                       </tr>
@@ -566,7 +562,109 @@ KMS
             </div>
           </div>
 
-          <!-- 6. Finishing & Packing -->
+          <!-- 6. Extra Work -->
+          <div class="accordion-item">
+            <h2 class="accordion-header" id="extraHeading">
+              <button class="accordion-button {% if not extra_work %}collapsed{% endif %}" type="button"
+                data-bs-toggle="collapse" data-bs-target="#extraCollapse" aria-expanded="false"
+                aria-controls="extraCollapse">
+                <i class="bi bi-stars me-2"></i> Extra Work
+                {% if extra_work %}
+                <span class="badge bg-success ms-2">Completed</span>
+                {% else %}
+                <span class="badge bg-secondary ms-2">Pending</span>
+                {% endif %}
+              </button>
+            </h2>
+            <div id="extraCollapse" class="accordion-collapse collapse {% if extra_work %}show{% endif %}"
+              aria-labelledby="extraHeading">
+              <div class="accordion-body">
+                {% if extra_work %}
+                <h5 class="mb-3">Sending details</h5>
+                <div class="table-responsive">
+                  <table class="table table-bordered table-striped table-hover">
+                    <tbody>
+                      <tr>
+                        <th scope="row">Style ID</th>
+                        <td>{{ order.style_id }}</td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Added By</th>
+                        <td>{{extra_work.user}}</td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Issued Challan Date</th>
+                        <td>{{ extra_work.issued_challan_date|date:"F d, Y" }}</td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Issued Challan #</th>
+                        <td>{{ extra_work.issued_challan_number }}</td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Job Worker Name</th>
+                        <td>{{ extra_work.job_worker_name }}</td>
+                      </tr>
+                      <tr>
+                      <tr>
+                        <th scope="row">Extra Work Name</th>
+                        <td>{{ extra_work.extra_work_name }}</td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Issued Challan Quantity</th>
+                        <td>{{ extra_work.issued_challan_quantity }}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <h5 class="mb-3">Receiving Details</h5>
+                <div class="table-responsive">
+                  <table class="table table-bordered table-striped table-hover">
+                    <tbody>
+                      <tr>
+                        <th scope="row">Received Quantity</th>
+                        <td>{{ extra_work.received_quantity }}</td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Balance Quantity</th>
+                        <td>{{ extra_work.balance_quantity }}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <h5 class="mb-3">Finishing & Packing Invoice Details</h5>
+                <div class="table-responsive">
+                  <table class="table table-bordered table-striped table-hover">
+                    <tbody>
+                      <tr>
+                        <th scope="row">Rate</th>
+                        <td>₹ {{ extra_work.rate|indian_number_format }}</td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Amount</th>
+                        <td>₹ {{ extra_work.amount|indian_number_format }}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                {% else %}
+                <div class="text-center py-3">
+                  <p class="text-muted">No extra work information available yet.</p>
+                  {% with status_position=order.status|get_status_position %}
+                  {% if not order.status|get_status_position == 5 %}
+                  <p class="text-muted">Add previous data before adding this one.</p>
+                  {% else %}
+                  <a href="{% url 'addextrawork' order.id %}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle"></i> Add Extra Work Details
+                  </a>
+                  {% endif %}
+                  {% endwith %}
+                </div>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+
+          <!-- 7. Finishing & Packing -->
           <div class="accordion-item">
             <h2 class="accordion-header" id="finishingHeading">
               <button class="accordion-button {% if not finishing_packing %}collapsed{% endif %}" type="button"
@@ -643,7 +741,7 @@ KMS
                 <div class="text-center py-3">
                   <p class="text-muted">No finishing and packing information available yet.</p>
                   {% with status_position=order.status|get_status_position %}
-                  {% if not order.status|get_status_position == 5 %}
+                  {% if not order.status|get_status_position == 6 %}
                   <p class="text-muted">Add previous data before adding this one.</p>
                   {% else %}
                   <a href="{% url 'addfinishingandpacking' order.id %}" class="btn btn-primary">
@@ -657,7 +755,7 @@ KMS
             </div>
           </div>
 
-          <!-- 7. Dispatch -->
+          <!-- 8. Dispatch -->
           <div class="accordion-item">
             <h2 class="accordion-header" id="dispatchHeading">
               <button class="accordion-button {% if not dispatch %}collapsed{% endif %}" type="button"
@@ -716,7 +814,7 @@ KMS
                 <div class="text-center py-3">
                   <p class="text-muted">No dispatch information available yet.</p>
                   {% with status_position=order.status|get_status_position %}
-                  {% if not order.status|get_status_position == 6 %}
+                  {% if not order.status|get_status_position == 7 %}
                   <p class="text-muted">Add previous data before adding this one.</p>
                   {% else %}
                   <a href="{% url 'adddispatch' order.id %}" class="btn btn-primary">

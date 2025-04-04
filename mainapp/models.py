@@ -11,11 +11,12 @@ class Order(models.Model):
         ('Printing and Dyeing', 'Printing and Dyeing'),
         ('Cloth Cutting', 'Cloth Cutting'),
         ('Stitching', 'Stitching'),
+        ('Extra Work', 'Extra Work'),
         ('Finishing and Packing', 'Finishing and Packing'),
         ('Dispatched', 'Dispatched'),
     ]
 
-    order_date = models.DateField(auto_now_add=True)
+    order_date = models.DateField(default=datetime.date.today)
     style_id = models.CharField(max_length=20)
     order_received_from = models.CharField(max_length=20)
     quantity = models.IntegerField()
@@ -157,7 +158,6 @@ class Stitching(models.Model):
     # sending details
     # style_id - will get from linked parent order
     job_worker_name = models.CharField(max_length=100)
-    extra_work_name = models.CharField(max_length=100)
     issued_challan_quantity = models.IntegerField()
     # receiving details
     received_quantity = models.IntegerField()
@@ -183,6 +183,38 @@ class Stitching(models.Model):
     class Meta:
         verbose_name_plural = "Stitching"
 
+class ExtraWork(models.Model):
+    order = models.ForeignKey(Order, on_delete=models.CASCADE)
+    issued_challan_date = models.DateField(default=datetime.date.today)
+    issued_challan_number = models.CharField(max_length=50)
+    # style_id - will get from linked parent order
+    # sending details
+    job_worker_name = models.CharField(max_length=100)
+    extra_work_name = models.CharField(max_length=100)
+    issued_challan_quantity = models.IntegerField()
+    # receiving details
+    received_quantity = models.IntegerField()
+    balance_quantity = models.IntegerField(blank=True) # calculated field
+    rate = models.DecimalField(max_digits=10, decimal_places=2)
+    amount = models.DecimalField(max_digits=10, decimal_places=2, blank=True) # calculated field
+    received_date = models.DateField(default=datetime.date.today)
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
+
+    def __str__(self):
+        return f"Extra Work for Order # {self.order.style_id}"
+    
+    def save(self, *args, **kwargs):
+        self.balance_quantity = self.issued_challan_quantity - self.received_quantity
+        self.amount = self.received_quantity * self.rate
+        if self.order.status == 'Stitching':
+            self.order.status = 'Extra Work'
+            self.order.save()
+        super().save(*args, **kwargs)
+    
+    class Meta:
+        verbose_name_plural = "Extra Work"
+
 class FinishingAndPacking(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE)
     issued_challan_date = models.DateField(default=datetime.date.today)
@@ -205,7 +237,7 @@ class FinishingAndPacking(models.Model):
     def save(self, *args, **kwargs):
         self.rejected = self.issued_challan_quantity - self.packed_quantity
         self.amount = self.packed_quantity * self.rate
-        if self.order.status == 'Stitching':
+        if self.order.status == 'Extra Work':
             self.order.status = 'Finishing and Packing'
             self.order.save()
         super().save(*args, **kwargs)

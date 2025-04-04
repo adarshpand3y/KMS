@@ -1,5 +1,5 @@
 from django import forms
-from .models import Order, FabricPurchased, PrintingAndDyeing, ClothCutting, Stitching, FinishingAndPacking, Dispatch
+from .models import Order, FabricPurchased, PrintingAndDyeing, ClothCutting, Stitching, ExtraWork, FinishingAndPacking, Dispatch
 
 class OrderForm(forms.ModelForm):
     class Meta:
@@ -45,6 +45,15 @@ class ClothCuttingForm(forms.ModelForm):
 class StitchingForm(forms.ModelForm):
     class Meta:
         model = Stitching
+        fields = ['issued_challan_date', 'issued_challan_number', 'job_worker_name', 
+                  'issued_challan_quantity', 'received_quantity', 'rate']
+        widgets = {
+            'issued_challan_date': forms.DateInput(attrs={'type': 'date', 'placeholder': 'YYYY-MM-DD'}),
+        }
+
+class ExtraWorkForm(forms.ModelForm):
+    class Meta:
+        model = ExtraWork
         fields = ['issued_challan_date', 'issued_challan_number', 'job_worker_name', 'extra_work_name', 
                   'issued_challan_quantity', 'received_quantity', 'rate']
         widgets = {
