@@ -92,10 +92,11 @@ Showing all orders
                               <li><a class="dropdown-item" href="{% url "filter_by_status" "dispatched" %}">Dispatched</a></li>
                             </ul>
                           </div>
-                        <form class="d-flex align-items-center justify-content-between my-2 me-0">
-                            <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
+                        <form class="d-flex align-items-center justify-content-between my-2 me-0" method="POST" action="{% url 'search_orders' %}">
+                            {% csrf_token %}
+                            <input class="form-control me-2" type="search" placeholder="Search" name="search_string" aria-label="Search" required>
                             <button class="btn btn-outline-success me-0" type="submit">Search</button>
-                          </form>
+                        </form>
                     </div>
                  </div>
                 <!-- <a href="{% url "addorder" %}" class="btn btn-success mb-3">Add New Order</a> -->

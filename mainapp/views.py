@@ -3,7 +3,7 @@ from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import login, authenticate, logout
 from django.contrib import messages
-from django.db.models import Sum, Count, F, ExpressionWrapper, fields
+from django.db.models import Sum, Count, Q
 from django.db.models.functions import TruncDay, TruncMonth
 from datetime import datetime, timedelta
 from django.contrib.auth.models import User
@@ -73,7 +73,7 @@ def index(request):
     first_day_of_month = today.replace(day=1)
 
     # Query all the orders for this month
-    orders = Order.objects.filter(order_date__gte=first_day_of_month)
+    orders = Order.objects.filter(order_date__gte=first_day_of_month).order_by('-order_date')
 
     total_orders = Order.objects.count()
     total_revenue = Order.objects.aggregate(total_revenue=Sum('amount'))['total_revenue'] or 0
@@ -155,7 +155,7 @@ def index(request):
         'total_revenue': total_revenue,
         'in_production': in_production,
         'dispatched_orders': dispatched_orders,
-        'orders': orders,
+        'orders': orders[:20], ## Display only the first 20 orders
         'day_counts': day_counts,
         'week_days': week_days,
         'week_days_with_counts': week_days_with_counts,
@@ -430,3 +430,26 @@ def filter_by_status(request, status):
         'status': status,
     }
     return render(request, 'filter.html', context)
+
+@login_required
+def search_orders(request):
+    if request.user.is_authenticated:
+        if request.method == 'POST':
+            search_string = request.POST.get('search_string', '')
+            if not search_string or search_string.isspace() or search_string == '':
+                messages.error(request, 'Search query cannot be empty.')
+                return redirect('index')
+            orders = Order.objects.filter(Q(style_id=search_string) |
+                                        Q(order_received_from__icontains=search_string)).order_by('-order_date')
+            context = {
+                'orders': orders,
+                'search_string': search_string,
+            }
+            return render(request, 'search.html', context)
+        
+        messages.error(request, 'Invalid search request. Please try again.')
+        return redirect('index')
+    
+    else:
+        messages.error(request, 'Log into your account to access this page.')
+        return redirect('index')

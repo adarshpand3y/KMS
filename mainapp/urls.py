@@ -18,4 +18,5 @@ urlpatterns = [
     path('adddispatch/<int:id>', views.add_dispatch, name='adddispatch'),
 
     path('filter/<str:status>', views.filter_by_status, name='filter_by_status'),
+    path('search', views.search_orders, name='search_orders'),
 ]

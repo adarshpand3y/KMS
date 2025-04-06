@@ -3,7 +3,7 @@
 {% load custom_filters %}
 
 {% block title %}
-Filtered orders by {{status}}
+Searched orders by {{search_string}}
 {% endblock title %}
 
 {% block body %}
@@ -13,7 +13,7 @@ Filtered orders by {{status}}
         <!-- Card for displaying orders -->
                 <!-- Button to add new order (Optional) -->
                  <div class="d-flex align-items-center justify-content-between my-3 flex-wrap">
-                    <h3>Filtered orders by {{status}}</h3>
+                    <h3>Searched orders by {{search_string}}</h3>
                     <div class="d-flex align-items-center justify-content-between flex-wrap my-2">
                         <a href="{% url 'addorder' %}" class="btn btn-success me-2">Add Order</a>
                         <div class="dropdown me-2">

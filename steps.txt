@@ -21,11 +21,12 @@ TODO
 
 REMOVE EXTRA VIEWS AND URLS AFTER DEV
 
-add extra work model, form and view and add it to the step
-Create search order
-create filter order
+add extra work model, form and view and add it to the step - done
+create filter order - done
+on homepage limit orders to 10 most recent - done
+Create search order - done
+create all orders page
 create custom name and icon branding
-on homepage limit orders to 10 most recent
 add challan generation and printing
 add cloudinary integration
 export to csv
