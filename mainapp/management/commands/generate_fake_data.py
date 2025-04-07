@@ -22,6 +22,10 @@ class Command(BaseCommand):
     
     # Configuration variables
     DEFAULT_NUM_ORDERS = 100
+    DEFAULT_NUM_USERS = 5  # Default number of users to create
+    
+    # Sample user roles
+    USER_ROLES = ['manager', 'production_supervisor', 'quality_control', 'inventory', 'logistics']
     
     # Fabric details options
     FABRIC_TYPES = ['Cotton', 'Linen', 'Silk', 'Wool', 'Polyester', 'Rayon']
@@ -118,18 +122,67 @@ class Command(BaseCommand):
         parser.add_argument('--orders', type=int, default=self.DEFAULT_NUM_ORDERS, help='Number of orders to generate')
         parser.add_argument('--user', type=str, default=None, help='Username to associate with records')
         parser.add_argument('--complete', action='store_true', help='Generate complete lifecycle for some orders')
+        parser.add_argument('--users', type=int, default=self.DEFAULT_NUM_USERS, help='Number of sample users to create')
 
     def handle(self, *args, **options):
         fake = Faker()
         num_orders = options['orders']
-        user = None
+        specified_user = None
+        
+        # Create sample users or get the specified user
+        users = []
         
         if options['user']:
             try:
-                user = User.objects.get(username=options['user'])
-                self.stdout.write(self.style.SUCCESS(f'Using user: {user.username}'))
+                specified_user = User.objects.get(username=options['user'])
+                self.stdout.write(self.style.SUCCESS(f'Using specified user: {specified_user.username}'))
+                users.append(specified_user)
             except User.DoesNotExist:
-                self.stdout.write(self.style.WARNING(f'User {options["user"]} not found. Creating records without user.'))
+                self.stdout.write(self.style.WARNING(f'User {options["user"]} not found.'))
+        
+        # Create sample users if no specific user was provided or add more users
+        if not options['user'] or (options['user'] and options['users'] > 1):
+            num_users = options['users']
+            self.stdout.write(f'Creating {num_users} sample users...')
+            
+            # Create admin user if it doesn't exist
+            try:
+                admin_user = User.objects.get(username='admin')
+                self.stdout.write(f'Admin user already exists')
+                if not users or admin_user.id != specified_user.id:
+                    users.append(admin_user)
+            except User.DoesNotExist:
+                admin_user = User.objects.create_superuser(
+                    username='admin',
+                    email='admin@example.com',
+                    password='admin123'
+                )
+                self.stdout.write(f'Created admin user: admin')
+                users.append(admin_user)
+            
+            # Create regular users with roles in their usernames
+            for i in range(num_users - (1 if 'admin' in [u.username for u in users] else 0)):
+                role = self.USER_ROLES[i % len(self.USER_ROLES)]
+                username = f"{role}_{i+1}"
+                
+                # Check if user already exists
+                if User.objects.filter(username=username).exists():
+                    user = User.objects.get(username=username)
+                    self.stdout.write(f'User {username} already exists')
+                else:
+                    user = User.objects.create_user(
+                        username=username,
+                        email=f"{username}@example.com",
+                        password=f"{username}123",
+                        first_name=fake.first_name(),
+                        last_name=fake.last_name()
+                    )
+                    self.stdout.write(f'Created user: {username}')
+                
+                if not users or user.id not in [u.id for u in users]:
+                    users.append(user)
+            
+            self.stdout.write(self.style.SUCCESS(f'Successfully created/loaded {len(users)} users'))
         
         # Get current month's date range
         today = datetime.now()
@@ -144,6 +197,9 @@ class Command(BaseCommand):
             order_date = fake.date_between(start_date=first_day, end_date=min(last_day, today)) # Create orders only up to today
             # order_date = fake.date_between(start_date=first_day, end_date=last_day) # Create orders for the entire month
             
+            # Assign a random user from our list
+            user = random.choice(users) if users else None
+            
             order = Order(
                 order_date=order_date,
                 style_id=f'STY-{fake.bothify(text="??###")}',
@@ -154,36 +210,36 @@ class Command(BaseCommand):
             )
             order.save()
             orders.append(order)
-            self.stdout.write(f'Created order: {order} on {order.order_date}')
+            self.stdout.write(f'Created order: {order} on {order.order_date} (User: {user.username})')
             
         # Generate complete lifecycle for some orders if requested
         if options['complete']:
             complete_orders = random.sample(orders, min(len(orders), max(1, num_orders // 2)))
             for order in complete_orders:
-                self._generate_full_lifecycle(order, fake, user, last_day)
+                self._generate_full_lifecycle(order, fake, users, last_day)
         else:
             # Otherwise, generate random stages
             for order in orders:
                 # Randomly decide how far in the process this order should go
                 stage = random.randint(0, 7)  # 0-7 for the 8 possible statuses
                 if stage >= 1:
-                    self._create_fabric_purchased(order, fake, user, last_day=last_day)
+                    self._create_fabric_purchased(order, fake, users, last_day=last_day)
                 if stage >= 2:
-                    self._create_printing_and_dyeing(order, fake, user, last_day=last_day)
+                    self._create_printing_and_dyeing(order, fake, users, last_day=last_day)
                 if stage >= 3:
-                    self._create_cloth_cutting(order, fake, user, last_day=last_day)
+                    self._create_cloth_cutting(order, fake, users, last_day=last_day)
                 if stage >= 4:
-                    self._create_stitching(order, fake, user, last_day=last_day)
+                    self._create_stitching(order, fake, users, last_day=last_day)
                 if stage >= 5:
-                    self._create_extra_work(order, fake, user, last_day=last_day)
+                    self._create_extra_work(order, fake, users, last_day=last_day)
                 if stage >= 6:
-                    self._create_finishing_and_packing(order, fake, user, last_day=last_day)
+                    self._create_finishing_and_packing(order, fake, users, last_day=last_day)
                 if stage >= 7:
-                    self._create_dispatch(order, fake, user, last_day=last_day)
+                    self._create_dispatch(order, fake, users, last_day=last_day)
         
         self.stdout.write(self.style.SUCCESS(f'Successfully generated data for {num_orders} orders within {today.strftime("%B %Y")}'))
 
-    def _generate_full_lifecycle(self, order, fake, user, last_day=None):
+    def _generate_full_lifecycle(self, order, fake, users, last_day=None):
         """Generate a complete lifecycle for an order with realistic dates"""
         self.stdout.write(f'Generating complete lifecycle for order {order}')
         
@@ -200,7 +256,7 @@ class Command(BaseCommand):
         current_date += timedelta(days=days_to_add)
         if last_day and current_date > last_day.date():
             current_date = last_day.date()
-        fabric = self._create_fabric_purchased(order, fake, user, current_date)
+        fabric = self._create_fabric_purchased(order, fake, users, current_date)
         
         # Add days for printing and dyeing (scaled)
         days_to_add = max(1, int(random.randint(self.PRINTING_DYEING_DAYS_MIN, 
@@ -208,7 +264,7 @@ class Command(BaseCommand):
         current_date += timedelta(days=days_to_add)
         if last_day and current_date > last_day.date():
             current_date = last_day.date()
-        pd = self._create_printing_and_dyeing(order, fake, user, current_date)
+        pd = self._create_printing_and_dyeing(order, fake, users, current_date)
         
         # Add days for cloth cutting (scaled)
         days_to_add = max(1, int(random.randint(self.CLOTH_CUTTING_DAYS_MIN, 
@@ -216,7 +272,7 @@ class Command(BaseCommand):
         current_date += timedelta(days=days_to_add)
         if last_day and current_date > last_day.date():
             current_date = last_day.date()
-        cutting = self._create_cloth_cutting(order, fake, user, current_date)
+        cutting = self._create_cloth_cutting(order, fake, users, current_date)
         
         # Add days for stitching (scaled)
         days_to_add = max(1, int(random.randint(self.STITCHING_DAYS_MIN, 
@@ -224,7 +280,7 @@ class Command(BaseCommand):
         current_date += timedelta(days=days_to_add)
         if last_day and current_date > last_day.date():
             current_date = last_day.date()
-        stitching = self._create_stitching(order, fake, user, current_date)
+        stitching = self._create_stitching(order, fake, users, current_date)
         
         # Add days for extra work (scaled)
         days_to_add = max(1, int(random.randint(self.EXTRA_WORK_DAYS_MIN, 
@@ -232,7 +288,7 @@ class Command(BaseCommand):
         current_date += timedelta(days=days_to_add)
         if last_day and current_date > last_day.date():
             current_date = last_day.date()
-        extra = self._create_extra_work(order, fake, user, current_date)
+        extra = self._create_extra_work(order, fake, users, current_date)
         
         # Add days for finishing and packing (scaled)
         days_to_add = max(1, int(random.randint(self.FINISHING_PACKING_DAYS_MIN, 
@@ -240,7 +296,7 @@ class Command(BaseCommand):
         current_date += timedelta(days=days_to_add)
         if last_day and current_date > last_day.date():
             current_date = last_day.date()
-        finishing = self._create_finishing_and_packing(order, fake, user, current_date)
+        finishing = self._create_finishing_and_packing(order, fake, users, current_date)
         
         # Add days for dispatch (scaled)
         days_to_add = max(1, int(random.randint(self.DISPATCH_DAYS_MIN, 
@@ -248,16 +304,19 @@ class Command(BaseCommand):
         current_date += timedelta(days=days_to_add)
         if last_day and current_date > last_day.date():
             current_date = last_day.date()
-        dispatch = self._create_dispatch(order, fake, user, current_date)
+        dispatch = self._create_dispatch(order, fake, users, current_date)
         
         self.stdout.write(self.style.SUCCESS(f'Completed full lifecycle for order {order}'))
         
-    def _create_fabric_purchased(self, order, fake, user, custom_date=None, last_day=None):
+    def _create_fabric_purchased(self, order, fake, users, custom_date=None, last_day=None):
         if custom_date:
             date = custom_date
         else:
             max_date = last_day.date() if last_day else order.order_date + timedelta(days=30)
             date = fake.date_between(start_date=order.order_date, end_date=max_date)
+            
+        # Assign a random user
+        user = random.choice(users) if users else None
             
         # Ensure challan date doesn't exceed month end
         challan_days = random.randint(self.FABRIC_CHALLAN_DAYS_MIN, self.FABRIC_CHALLAN_DAYS_MAX)
@@ -284,14 +343,18 @@ class Command(BaseCommand):
             user=user
         )
         fabric.save()
+        self.stdout.write(f'Created fabric purchase record for order {order.id} (User: {user.username if user else "None"})')
         return fabric
 
-    def _create_printing_and_dyeing(self, order, fake, user, custom_date=None, last_day=None):
+    def _create_printing_and_dyeing(self, order, fake, users, custom_date=None, last_day=None):
         if custom_date:
             date = custom_date
         else:
             max_date = last_day.date() if last_day else order.order_date + timedelta(days=45)
             date = fake.date_between(start_date=order.order_date, end_date=max_date)
+            
+        # Assign a random user
+        user = random.choice(users) if users else None
             
         # Ensure receive date doesn't exceed month end
         receive_days = random.randint(self.DYEING_RECEIVE_DAYS_MIN, self.DYEING_RECEIVE_DAYS_MAX)
@@ -325,14 +388,18 @@ class Command(BaseCommand):
             user=user
         )
         pd.save()
+        self.stdout.write(f'Created printing/dyeing record for order {order.id} (User: {user.username if user else "None"})')
         return pd
 
-    def _create_cloth_cutting(self, order, fake, user, custom_date=None, last_day=None):
+    def _create_cloth_cutting(self, order, fake, users, custom_date=None, last_day=None):
         if custom_date:
             date = custom_date
         else:
             max_date = last_day.date() if last_day else order.order_date + timedelta(days=60)
             date = fake.date_between(start_date=order.order_date, end_date=max_date)
+            
+        # Assign a random user
+        user = random.choice(users) if users else None
             
         # Ensure receive date doesn't exceed month end
         receive_days = random.randint(self.CUTTING_RECEIVE_DAYS_MIN, self.CUTTING_RECEIVE_DAYS_MAX)
@@ -365,14 +432,18 @@ class Command(BaseCommand):
             user=user
         )
         cutting.save()
+        self.stdout.write(f'Created cloth cutting record for order {order.id} (User: {user.username if user else "None"})')
         return cutting
 
-    def _create_stitching(self, order, fake, user, custom_date=None, last_day=None):
+    def _create_stitching(self, order, fake, users, custom_date=None, last_day=None):
         if custom_date:
             date = custom_date
         else:
             max_date = last_day.date() if last_day else order.order_date + timedelta(days=75)
             date = fake.date_between(start_date=order.order_date, end_date=max_date)
+            
+        # Assign a random user
+        user = random.choice(users) if users else None
             
         # Ensure receive date doesn't exceed month end
         receive_days = random.randint(self.STITCHING_RECEIVE_DAYS_MIN, self.STITCHING_RECEIVE_DAYS_MAX)
@@ -402,14 +473,18 @@ class Command(BaseCommand):
             user=user
         )
         stitching.save()
+        self.stdout.write(f'Created stitching record for order {order.id} (User: {user.username if user else "None"})')
         return stitching
 
-    def _create_extra_work(self, order, fake, user, custom_date=None, last_day=None):
+    def _create_extra_work(self, order, fake, users, custom_date=None, last_day=None):
         if custom_date:
             date = custom_date
         else:
             max_date = last_day.date() if last_day else order.order_date + timedelta(days=90)
             date = fake.date_between(start_date=order.order_date, end_date=max_date)
+            
+        # Assign a random user
+        user = random.choice(users) if users else None
             
         # Ensure receive date doesn't exceed month end
         receive_days = random.randint(self.EXTRA_WORK_RECEIVE_DAYS_MIN, self.EXTRA_WORK_RECEIVE_DAYS_MAX)
@@ -440,14 +515,18 @@ class Command(BaseCommand):
             user=user
         )
         extra_work.save()
+        self.stdout.write(f'Created extra work record for order {order.id} (User: {user.username if user else "None"})')
         return extra_work
 
-    def _create_finishing_and_packing(self, order, fake, user, custom_date=None, last_day=None):
+    def _create_finishing_and_packing(self, order, fake, users, custom_date=None, last_day=None):
         if custom_date:
             date = custom_date
         else:
             max_date = last_day.date() if last_day else order.order_date + timedelta(days=100)
             date = fake.date_between(start_date=order.order_date, end_date=max_date)
+        
+        # Assign a random user
+        user = random.choice(users) if users else None
         
         # Get quantities from previous step if available
         try:
@@ -470,14 +549,18 @@ class Command(BaseCommand):
             user=user
         )
         finishing.save()
+        self.stdout.write(f'Created finishing/packing record for order {order.id} (User: {user.username if user else "None"})')
         return finishing
 
-    def _create_dispatch(self, order, fake, user, custom_date=None, last_day=None):
+    def _create_dispatch(self, order, fake, users, custom_date=None, last_day=None):
         if custom_date:
             date = custom_date
         else:
             max_date = last_day.date() if last_day else order.order_date + timedelta(days=110)
             date = fake.date_between(start_date=order.order_date, end_date=max_date)
+        
+        # Assign a random user
+        user = random.choice(users) if users else None
         
         # Get quantities from previous step if available
         try:
@@ -496,4 +579,5 @@ class Command(BaseCommand):
             user=user
         )
         dispatch.save()
+        self.stdout.write(f'Created dispatch record for order {order.id} (User: {user.username if user else "None"})')
         return dispatch

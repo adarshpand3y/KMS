@@ -1,6 +1,5 @@
 from django import template
 from decimal import Decimal
-import locale
 
 register = template.Library()
 
@@ -21,20 +20,31 @@ def get_status_position(status):
 @register.filter(name='indian_number_format')
 def indian_number_format(value):
     """
-    Format the number in Indian style using the locale module (e.g., 1,00,00,000).
+    Format the number in Indian style (e.g., 1,00,00,000).
     """
     if not isinstance(value, (int, float, Decimal)):
         print('Not a number', type(value))
         return value
-
     try:
-        # Set the locale to Indian (Hindi)
-        locale.setlocale(locale.LC_NUMERIC, 'hi_IN')
-        
-        # Format the number using locale formatting
-        formatted_value = locale.format_string("%d", value, grouping=True)
-        
+        value_str = str(int(value))
+        is_negative = value_str.startswith('-')
+        if is_negative:
+            value_str = value_str[1:]
+        length = len(value_str)
+        if length <= 3:
+            formatted_value = value_str
+        else:
+            formatted_value = value_str[-3:]
+            remaining = value_str[:-3]
+            while remaining:
+                if len(remaining) >= 2:
+                    formatted_value = remaining[-2:] + ',' + formatted_value
+                    remaining = remaining[:-2]
+                else:
+                    formatted_value = remaining + ',' + formatted_value
+                    remaining = ''
+        if is_negative:
+            formatted_value = '-' + formatted_value
         return formatted_value
-    except locale.Error:
-        # Fallback in case the locale is not available on the system
+    except Exception as e:
         return value
