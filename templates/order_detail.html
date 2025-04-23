@@ -99,7 +99,7 @@ KMS
                     </tr>
                     <tr>
                       <th scope="row">Quantity</th>
-                      <td>{{ order.quantity|indian_number_format }}</td>
+                      <td>{{ order.quantity|indian_number_format }} ({{order.size}})</td>
                     </tr>
                     <tr>
                       <th scope="row">Rate</th>
@@ -255,7 +255,7 @@ KMS
                       </tr>
                       <tr>
                         <th scope="row">Challan Number</th>
-                        <td>{{ printing_dyeing.issued_challan_number }}</td>
+                        <td>{{ fabric_purchased.challan_number }}</td>
                       </tr>
                       <tr>
                         <th scope="row">Dyer/Printer Name</th>
@@ -565,86 +565,95 @@ KMS
           <!-- 6. Extra Work -->
           <div class="accordion-item">
             <h2 class="accordion-header" id="extraHeading">
-              <button class="accordion-button {% if not extra_work %}collapsed{% endif %}" type="button"
+              <button class="accordion-button {% if not extra_works %}collapsed{% endif %}" type="button"
                 data-bs-toggle="collapse" data-bs-target="#extraCollapse" aria-expanded="false"
                 aria-controls="extraCollapse">
                 <i class="bi bi-stars me-2"></i> Extra Work
-                {% if extra_work %}
+                {% if extra_works %}
                 <span class="badge bg-success ms-2">Completed</span>
                 {% else %}
                 <span class="badge bg-secondary ms-2">Pending</span>
                 {% endif %}
               </button>
             </h2>
-            <div id="extraCollapse" class="accordion-collapse collapse {% if extra_work %}show{% endif %}"
+            <div id="extraCollapse" class="accordion-collapse collapse {% if extra_works %}show{% endif %}"
               aria-labelledby="extraHeading">
               <div class="accordion-body">
-                {% if extra_work %}
-                <h5 class="mb-3">Sending details</h5>
-                <div class="table-responsive">
-                  <table class="table table-bordered table-striped table-hover">
-                    <tbody>
-                      <tr>
-                        <th scope="row">Style ID</th>
-                        <td>{{ order.style_id }}</td>
-                      </tr>
-                      <tr>
-                        <th scope="row">Added By</th>
-                        <td>{{extra_work.user}}</td>
-                      </tr>
-                      <tr>
-                        <th scope="row">Issued Challan Date</th>
-                        <td>{{ extra_work.issued_challan_date|date:"F d, Y" }}</td>
-                      </tr>
-                      <tr>
-                        <th scope="row">Issued Challan #</th>
-                        <td>{{ extra_work.issued_challan_number }}</td>
-                      </tr>
-                      <tr>
-                        <th scope="row">Job Worker Name</th>
-                        <td>{{ extra_work.job_worker_name }}</td>
-                      </tr>
-                      <tr>
-                      <tr>
-                        <th scope="row">Extra Work Name</th>
-                        <td>{{ extra_work.extra_work_name }}</td>
-                      </tr>
-                      <tr>
-                        <th scope="row">Issued Challan Quantity</th>
-                        <td>{{ extra_work.issued_challan_quantity }}</td>
-                      </tr>
-                    </tbody>
-                  </table>
+                {% if extra_works %}
+                {% for extra_work in extra_works %}
+                <div class="card p-3 my-3">
+                  <h4 class="mb-3">Extra work: {{extra_work.extra_work_name}}</h4>
+                  <h5 class="mb-3">Sending details</h5>
+                  <div class="table-responsive">
+                    <table class="table table-bordered table-striped table-hover">
+                      <tbody>
+                        <tr>
+                          <th scope="row">Style ID</th>
+                          <td>{{ order.style_id }}</td>
+                        </tr>
+                        <tr>
+                          <th scope="row">Added By</th>
+                          <td>{{extra_work.user}}</td>
+                        </tr>
+                        <tr>
+                          <th scope="row">Issued Challan Date</th>
+                          <td>{{ extra_work.issued_challan_date|date:"F d, Y" }}</td>
+                        </tr>
+                        <tr>
+                          <th scope="row">Issued Challan #</th>
+                          <td>{{ extra_work.issued_challan_number }}</td>
+                        </tr>
+                        <tr>
+                          <th scope="row">Job Worker Name</th>
+                          <td>{{ extra_work.job_worker_name }}</td>
+                        </tr>
+                        <tr>
+                          <th scope="row">Extra Work Name</th>
+                          <td>{{ extra_work.extra_work_name }}</td>
+                        </tr>
+                        <tr>
+                          <th scope="row">Issued Challan Quantity</th>
+                          <td>{{ extra_work.issued_challan_quantity }}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                  <h5 class="mb-3">Receiving Details</h5>
+                  <div class="table-responsive">
+                    <table class="table table-bordered table-striped table-hover">
+                      <tbody>
+                        <tr>
+                          <th scope="row">Received Quantity</th>
+                          <td>{{ extra_work.received_quantity }}</td>
+                        </tr>
+                        <tr>
+                          <th scope="row">Balance Quantity</th>
+                          <td>{{ extra_work.balance_quantity }}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                  <h5 class="mb-3">Extra Work Invoice Details</h5>
+                  <div class="table-responsive">
+                    <table class="table table-bordered table-striped table-hover">
+                      <tbody>
+                        <tr>
+                          <th scope="row">Rate</th>
+                          <td>₹ {{ extra_work.rate|indian_number_format }}</td>
+                        </tr>
+                        <tr>
+                          <th scope="row">Amount</th>
+                          <td>₹ {{ extra_work.amount|indian_number_format }}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
-                <h5 class="mb-3">Receiving Details</h5>
-                <div class="table-responsive">
-                  <table class="table table-bordered table-striped table-hover">
-                    <tbody>
-                      <tr>
-                        <th scope="row">Received Quantity</th>
-                        <td>{{ extra_work.received_quantity }}</td>
-                      </tr>
-                      <tr>
-                        <th scope="row">Balance Quantity</th>
-                        <td>{{ extra_work.balance_quantity }}</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-                <h5 class="mb-3">Finishing & Packing Invoice Details</h5>
-                <div class="table-responsive">
-                  <table class="table table-bordered table-striped table-hover">
-                    <tbody>
-                      <tr>
-                        <th scope="row">Rate</th>
-                        <td>₹ {{ extra_work.rate|indian_number_format }}</td>
-                      </tr>
-                      <tr>
-                        <th scope="row">Amount</th>
-                        <td>₹ {{ extra_work.amount|indian_number_format }}</td>
-                      </tr>
-                    </tbody>
-                  </table>
+                {% endfor %}
+                <div class="text-center py-3">
+                  <a href="{% url 'addextrawork' order.id %}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle"></i> Add More Extra Work Details
+                  </a>
                 </div>
                 {% else %}
                 <div class="text-center py-3">
@@ -706,7 +715,6 @@ KMS
                         <th scope="row">Job Worker Name</th>
                         <td>{{ finishing_packing.job_worker_name }}</td>
                       </tr>
-                      <tr>
                       <tr>
                         <th scope="row">Issued Challan Quantity</th>
                         <td>{{ finishing_packing.issued_challan_quantity }}</td>
@@ -797,7 +805,6 @@ KMS
                         <th scope="row">Quantity</th>
                         <td>{{ dispatch.quantity }}</td>
                       </tr>
-                      <tr>
                       <tr>
                         <th scope="row">Delivery note</th>
                         <td>{{ dispatch.delivery_note }}</td>

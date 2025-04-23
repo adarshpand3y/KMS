@@ -205,6 +205,7 @@ class Command(BaseCommand):
                 style_id=f'STY-{fake.bothify(text="??###")}',
                 order_received_from=fake.company(),
                 quantity=random.randint(self.ORDER_QUANTITY_MIN, self.ORDER_QUANTITY_MAX),
+                size=random.choice(['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', '4XL', '5XL']),
                 rate=random.randint(self.ORDER_RATE_MIN, self.ORDER_RATE_MAX),
                 user=user
             )
@@ -375,7 +376,7 @@ class Command(BaseCommand):
         pd = PrintingAndDyeing(
             order=order,
             issued_challan_date=date,
-            issued_challan_number=f'PDC-{fake.bothify(text="######")}',
+            # issued_challan_number=f'PDC-{fake.bothify(text="######")}',
             dyer_printer_name=fake.company(),
             fabric_detail=random.choice(self.FABRIC_TYPES),
             fabric_length=f'{random.randint(40, 60)}"{random.choice(["", "/", "x"])}{random.randint(40, 60)}"',

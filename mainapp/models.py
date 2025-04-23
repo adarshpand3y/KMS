@@ -16,11 +16,28 @@ class Order(models.Model):
         ('Dispatched', 'Dispatched'),
     ]
 
+    SIZE = [
+        ('XS', 'XS'),
+        ('S', 'S'),
+        ('M', 'M'),
+        ('L', 'L'),
+        ('XL', 'XL'),
+        ('2XL', '2XL'),
+        ('3XL', '3XL'),
+        ('4XL', '4XL'),
+        ('5XL', '5XL'),
+    ]
+
     order_date = models.DateField(default=datetime.date.today)
     style_id = models.CharField(max_length=20)
     order_received_from = models.CharField(max_length=20)
     quantity = models.IntegerField()
-    rate = models.IntegerField()    
+    rate = models.IntegerField()
+    size = models.CharField(
+        max_length=3,
+        choices=SIZE,
+        default='S',
+    )
     
     status = models.CharField(
         max_length=50,
@@ -82,7 +99,7 @@ class FabricPurchased(models.Model):
 class PrintingAndDyeing(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE)
     issued_challan_date = models.DateField(default=datetime.date.today)
-    issued_challan_number = models.CharField(max_length=50)
+    # issued_challan_number = models.CharField(max_length=50)
     # sending details
     # style_id - will get from linked parent order
     dyer_printer_name = models.CharField(max_length=100)

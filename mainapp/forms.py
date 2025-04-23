@@ -23,7 +23,7 @@ class FabricPurchasedForm(forms.ModelForm):
 class PrintingAndDyeingForm(forms.ModelForm):
     class Meta:
         model = PrintingAndDyeing
-        fields = ['issued_challan_date', 'issued_challan_number', 'dyer_printer_name', 'fabric_detail', 
+        fields = ['issued_challan_date', 'dyer_printer_name', 'fabric_detail', 
                   'fabric_length', 'issued_challan_quantity', 'shrinkage_in_percentage', 'received_quantity', 
                   'received_date', 'received_challan_number', 'rate']
         widgets = {

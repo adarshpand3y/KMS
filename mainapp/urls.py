@@ -19,4 +19,6 @@ urlpatterns = [
 
     path('filter/<str:status>', views.filter_by_status, name='filter_by_status'),
     path('search', views.search_orders, name='search_orders'),
+
+    path('trackdyers', views.track_dyers, name='track_dyers'),
 ]

@@ -244,7 +244,7 @@ def order_detail(request, id):
     printing_dyeing = PrintingAndDyeing.objects.filter(order=order).first()
     cloth_cutting = ClothCutting.objects.filter(order=order).first()
     stitching = Stitching.objects.filter(order=order).first()
-    extra_work = ExtraWork.objects.filter(order=order).first()
+    extra_works = ExtraWork.objects.filter(order=order)
     finishing_packing = FinishingAndPacking.objects.filter(order=order).first()
     dispatch = Dispatch.objects.filter(order=order).first()
     
@@ -254,7 +254,7 @@ def order_detail(request, id):
         'printing_dyeing': printing_dyeing,
         'cloth_cutting': cloth_cutting, 
         'stitching': stitching,
-        'extra_work': extra_work,
+        'extra_works': extra_works,
         'finishing_packing': finishing_packing,
         'dispatch': dispatch,
     }
@@ -348,9 +348,9 @@ def add_stitching(request, id):
 def add_extrawork(request, id):
     order = get_object_or_404(Order, id=id)
 
-    if order.status != 'Stitching':
-        messages.error(request, 'Extra work details can only be added to orders with status "Stitching".')
-        return redirect('orderdetail', id=id)
+    # if order.status != 'Stitching':
+    #     messages.error(request, 'Extra work details can only be added to orders with status "Stitching".')
+    #     return redirect('orderdetail', id=id)
     
     if request.method == 'POST':
         form = ExtraWorkForm(request.POST)
@@ -453,3 +453,6 @@ def search_orders(request):
     else:
         messages.error(request, 'Log into your account to access this page.')
         return redirect('index')
+
+def track_dyers(request):
+    return render(request, 'track_dyers.html')
