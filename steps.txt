@@ -42,7 +42,7 @@ TODO
 4. Add Size (XS, S, M, L, XL, 2XL... 5XL) on order details - done
 5. update printing send challan number to fabric issue challan number - done
 6. Add 2 extra work instances and make 2nd one optional - done, user can add n number of extra works
-7. Update dispatch format as provided
+7. Update dispatch format as provided - done
 
 Advanced features
 1. Track dyeing and printing

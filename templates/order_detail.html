@@ -813,6 +813,14 @@ KMS
                         <th scope="row">Invoice #</th>
                         <td>{{ dispatch.invoice_number }}</td>
                       </tr>
+                      <tr>
+                        <th scope="row">Box Details</th>
+                        <td><ul>
+                          {% for box in dispatch.box_details %}
+                            <li>Box {{forloop.counter}}: {{ box }}</li>
+                          {% endfor %}
+                        </ul></td>
+                      </tr>
                     </tbody>
                   </table>
                 </div>

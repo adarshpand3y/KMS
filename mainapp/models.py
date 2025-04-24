@@ -111,7 +111,7 @@ class PrintingAndDyeing(models.Model):
     received_quantity = models.IntegerField()
     balance_quantity = models.IntegerField(blank=True) # calculated field
     received_date = models.DateField(default=datetime.date.today)
-    received_challan_number = models.CharField(max_length=50)
+    received_challan_number = models.CharField(max_length=50, help_text="Each line represents the box number")
     # dyer invoice details
     rate = models.DecimalField(max_digits=10, decimal_places=2)
     amount = models.DecimalField(max_digits=10, decimal_places=2, blank=True) # calculated field
@@ -270,6 +270,7 @@ class Dispatch(models.Model):
     quantity = models.IntegerField()
     delivery_note = models.CharField(max_length=100, blank=True, null=True)
     invoice_number = models.CharField(max_length=50)
+    box_details = models.TextField(default="")
 
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
 

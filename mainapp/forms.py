@@ -1,5 +1,7 @@
 from django import forms
+from django.utils.safestring import mark_safe
 from .models import Order, FabricPurchased, PrintingAndDyeing, ClothCutting, Stitching, ExtraWork, FinishingAndPacking, Dispatch
+from crispy_forms.helper import FormHelper
 
 class OrderForm(forms.ModelForm):
     class Meta:
@@ -72,8 +74,27 @@ class FinishingAndPackingForm(forms.ModelForm):
 class DispatchForm(forms.ModelForm):
     class Meta:
         model = Dispatch
-        fields = ['dispatch_date', 'dispatched_to', 'quantity', 'delivery_note', 'invoice_number']
+        fields = ['dispatch_date', 'dispatched_to', 'quantity', 'delivery_note', 'invoice_number', 'box_details']
         widgets = {
             'dispatch_date': forms.DateInput(attrs={'type': 'date', 'placeholder': 'YYYY-MM-DD'}),
         }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
+        # Optional: Add help_text if not set in model
+        self.fields['box_details'].help_text = mark_safe(
+            '<ul class="form-text text-muted">'
+            '<li>Enter the box contents here.</li>'
+            '<li>Each line represents the box number.</li>'
+            '<li>In each line, enter the size contents and its quantity.</li>'
+            '<li>Example line 1: XS - 10, M, 20</li>'
+            '<li>Example line 2: XS - 25, L, 50</li>'
+            '</ul>'
+        )
+
+        # Crispy helper without layout
+        self.helper = FormHelper()
+        self.helper.form_method = 'post'
+        self.helper.label_class = 'form-label'
+        self.helper.field_class = 'form-control'

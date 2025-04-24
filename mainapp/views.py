@@ -247,7 +247,10 @@ def order_detail(request, id):
     extra_works = ExtraWork.objects.filter(order=order)
     finishing_packing = FinishingAndPacking.objects.filter(order=order).first()
     dispatch = Dispatch.objects.filter(order=order).first()
-    
+
+    if dispatch:
+        dispatch.box_details = [item for item in dispatch.box_details.replace("\r", "\n").split("\n") if item.strip() != ""]
+
     context = {
         'order': order,
         'fabric_purchased': fabric_purchased,
