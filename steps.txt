@@ -43,6 +43,7 @@ TODO
 5. update printing send challan number to fabric issue challan number - done
 6. Add 2 extra work instances and make 2nd one optional - done, user can add n number of extra works
 7. Update dispatch format as provided - done
+8. Split PrintingAndDyeing into two parts: sent and received - done
 
 Advanced features
 1. Track dyeing and printing

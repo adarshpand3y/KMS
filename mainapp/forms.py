@@ -1,6 +1,6 @@
 from django import forms
 from django.utils.safestring import mark_safe
-from .models import Order, FabricPurchased, PrintingAndDyeing, ClothCutting, Stitching, ExtraWork, FinishingAndPacking, Dispatch
+from .models import Order, FabricPurchased, PrintingAndDyeingSent, PrintingAndDyeingReceived, ClothCutting, Stitching, ExtraWork, FinishingAndPacking, Dispatch
 from crispy_forms.helper import FormHelper
 
 class OrderForm(forms.ModelForm):
@@ -22,14 +22,21 @@ class FabricPurchasedForm(forms.ModelForm):
             'issued_challan_date': forms.DateInput(attrs={'type': 'date', 'placeholder': 'YYYY-MM-DD'}),
         }
 
-class PrintingAndDyeingForm(forms.ModelForm):
+class PrintingAndDyeingSentForm(forms.ModelForm):
     class Meta:
-        model = PrintingAndDyeing
+        model = PrintingAndDyeingSent
         fields = ['issued_challan_date', 'dyer_printer_name', 'fabric_detail', 
-                  'fabric_length', 'issued_challan_quantity', 'shrinkage_in_percentage', 'received_quantity', 
-                  'received_date', 'received_challan_number', 'rate']
+                  'fabric_length', 'issued_challan_quantity', 'rate']
         widgets = {
             'issued_challan_date': forms.DateInput(attrs={'type': 'date', 'placeholder': 'YYYY-MM-DD'}),
+        }
+
+class PrintingAndDyeingReceivedForm(forms.ModelForm):
+    class Meta:
+        model = PrintingAndDyeingReceived
+        fields = ['shrinkage_in_percentage', 'received_date', 
+                  'received_challan_number']
+        widgets = {
             'received_date': forms.DateInput(attrs={'type': 'date', 'placeholder': 'YYYY-MM-DD'}),
         }
 

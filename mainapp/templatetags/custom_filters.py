@@ -8,12 +8,13 @@ def get_status_position(status):
     status_positions = {
         'Pending': 1,
         'Fabric Purchased': 2,
-        'Printing and Dyeing': 3,
-        'Cloth Cutting': 4,
-        'Stitching': 5,
-        'Extra Work': 6,
-        'Finishing and Packing': 7,
-        'Dispatched': 8
+        'Printing and Dyeing Sent': 3,
+        'Printing and Dyeing Received': 4,
+        'Cloth Cutting': 5,
+        'Stitching': 6,
+        'Extra Work': 7,
+        'Finishing and Packing': 8,
+        'Dispatched': 9
     }
     return status_positions.get(status, 0)
 
@@ -23,7 +24,6 @@ def indian_number_format(value):
     Format the number in Indian style (e.g., 1,00,00,000).
     """
     if not isinstance(value, (int, float, Decimal)):
-        print('Not a number', type(value))
         return value
     try:
         value_str = str(int(value))

@@ -2,7 +2,8 @@ from django.contrib import admin
 from .models import (
     Order, 
     FabricPurchased, 
-    PrintingAndDyeing, 
+    PrintingAndDyeingSent,
+    PrintingAndDyeingReceived ,
     ClothCutting, 
     Stitching,
     ExtraWork,
@@ -31,11 +32,21 @@ class FabricPurchasedAdmin(admin.ModelAdmin):
             obj.user = request.user
         super().save_model(request, obj, form, change)
 
-class PrintingAndDyeingAdmin(admin.ModelAdmin):
-    list_display = ['order', 'dyer_printer_name', 'issued_challan_quantity', 'received_quantity', 'balance_quantity']
-    list_filter = ['issued_challan_date', 'received_date']
-    search_fields = ['order__style_id', 'dyer_printer_name', 'issued_challan_number']
-    
+class PrintingAndDyeingSentAdmin(admin.ModelAdmin):
+    list_display = ['order', 'dyer_printer_name', 'issued_challan_quantity', 'received']
+    list_filter = ['issued_challan_date', 'received']
+    search_fields = ['order__style_id', 'dyer_printer_name']
+   
+    def save_model(self, request, obj, form, change):
+        if not obj.user:
+            obj.user = request.user
+        super().save_model(request, obj, form, change)
+
+class PrintingAndDyeingReceivedAdmin(admin.ModelAdmin):
+    list_display = ['order', 'printing_and_dyeing_sent', 'received_quantity', 'balance_quantity', 'received_date']
+    list_filter = ['received_date']
+    search_fields = ['order__style_id', 'printing_and_dyeing_sent__dyer_printer_name', 'received_challan_number']
+   
     def save_model(self, request, obj, form, change):
         if not obj.user:
             obj.user = request.user
@@ -94,7 +105,8 @@ class DispatchAdmin(admin.ModelAdmin):
 # Register your models here.
 admin.site.register(Order, OrderAdmin)
 admin.site.register(FabricPurchased, FabricPurchasedAdmin)
-admin.site.register(PrintingAndDyeing, PrintingAndDyeingAdmin)
+admin.site.register(PrintingAndDyeingSent, PrintingAndDyeingSentAdmin)
+admin.site.register(PrintingAndDyeingReceived, PrintingAndDyeingReceivedAdmin)
 admin.site.register(ClothCutting, ClothCuttingAdmin)
 admin.site.register(Stitching, StitchingAdmin)
 admin.site.register(ExtraWork, ExtraWorkAdmin)

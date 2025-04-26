@@ -24,7 +24,8 @@ Filtered orders by {{status}}
                             <ul class="dropdown-menu">
                                 <li><a class="dropdown-item" href="{% url "filter_by_status" "pending" %}">Pending</a></li>
                                 <li><a class="dropdown-item" href="{% url "filter_by_status" "fabric_purchased" %}">Fabric Purchased</a></li>
-                                <li><a class="dropdown-item" href="{% url "filter_by_status" "printing_and_dyeing" %}">Dyeing/Printing</a></li>
+                                <li><a class="dropdown-item" href="{% url "filter_by_status" "printing_and_dyeing_sent" %}">Dyeing/Printing Sent</a></li>
+                                <li><a class="dropdown-item" href="{% url "filter_by_status" "printing_and_dyeing_received" %}">Dyeing/Printing Received</a></li>
                                 <li><a class="dropdown-item" href="{% url "filter_by_status" "cloth_cutting" %}">Cloth cutting</a></li>
                                 <li><a class="dropdown-item" href="{% url "filter_by_status" "stitching" %}">Stitching</a></li>
                                 <li><a class="dropdown-item" href="{% url "filter_by_status" "extra_work" %}">Extra Work</a></li>

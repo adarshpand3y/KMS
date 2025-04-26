@@ -8,7 +8,8 @@ class Order(models.Model):
     STATUS = [
         ('Pending', 'Pending'),
         ('Fabric Purchased', 'Fabric Purchased'),
-        ('Printing and Dyeing', 'Printing and Dyeing'),
+        ('Printing and Dyeing Sent', 'Printing and Dyeing Sent'),
+        ('Printing and Dyeing Received', 'Printing and Dyeing Received'),
         ('Cloth Cutting', 'Cloth Cutting'),
         ('Stitching', 'Stitching'),
         ('Extra Work', 'Extra Work'),
@@ -44,7 +45,7 @@ class Order(models.Model):
         choices=STATUS,
         default='Pending',
     )
-    amount = models.BigIntegerField(blank=True) # calculated field
+    amount = models.BigIntegerField(blank=True)  # calculated field
 
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
 
@@ -96,42 +97,69 @@ class FabricPurchased(models.Model):
 
     #     return cleaned_data
 
-class PrintingAndDyeing(models.Model):
+class PrintingAndDyeingSent(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE)
     issued_challan_date = models.DateField(default=datetime.date.today)
-    # issued_challan_number = models.CharField(max_length=50)
-    # sending details
-    # style_id - will get from linked parent order
     dyer_printer_name = models.CharField(max_length=100)
     fabric_detail = models.CharField(max_length=100)
     fabric_length = models.CharField(max_length=20)
     issued_challan_quantity = models.IntegerField()
-    # receiving details
-    shrinkage_in_percentage = models.DecimalField(max_digits=10, decimal_places=2)
-    received_quantity = models.IntegerField()
-    balance_quantity = models.IntegerField(blank=True) # calculated field
-    received_date = models.DateField(default=datetime.date.today)
-    received_challan_number = models.CharField(max_length=50, help_text="Each line represents the box number")
+    received = models.BooleanField(default=False)
     # dyer invoice details
     rate = models.DecimalField(max_digits=10, decimal_places=2)
-    amount = models.DecimalField(max_digits=10, decimal_places=2, blank=True) # calculated field
-
+    amount = models.DecimalField(max_digits=10, decimal_places=2, blank=True)  # calculated field
+    
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
 
     def __str__(self):
-        return f"Printing & Dyeing for Order # {self.order.style_id}"
+        return f"Printing & Dyeing Sent for Order # {self.order.style_id}"
 
     def save(self, *args, **kwargs):
-        self.received_quantity = self.issued_challan_quantity - (self.issued_challan_quantity * self.shrinkage_in_percentage / 100)
-        self.balance_quantity = self.issued_challan_quantity - self.received_quantity
-        self.amount = self.received_quantity * self.rate
         if self.order.status == 'Fabric Purchased':
-            self.order.status = 'Printing and Dyeing'
+            self.order.status = 'Printing and Dyeing Sent'
+            self.amount = self.rate * self.issued_challan_quantity
             self.order.save()
         super().save(*args, **kwargs)
     
     class Meta:
-        verbose_name_plural = "Printing and Dyeing"
+        verbose_name_plural = "Printing and Dyeing Sent"
+
+class PrintingAndDyeingReceived(models.Model):
+    order = models.ForeignKey(Order, on_delete=models.CASCADE)
+    printing_and_dyeing_sent = models.ForeignKey(PrintingAndDyeingSent, on_delete=models.CASCADE)
+    shrinkage_in_percentage = models.DecimalField(max_digits=10, decimal_places=2)
+    received_quantity = models.IntegerField()
+    balance_quantity = models.IntegerField(blank=True)  # calculated field
+    received_date = models.DateField(default=datetime.date.today)
+    received_challan_number = models.CharField(max_length=50)
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
+
+    def __str__(self):
+        return f"Printing & Dyeing Received for Order # {self.order.style_id}"
+
+    def save(self, *args, **kwargs):
+        # Get issued quantity from the related PrintingAndDyeingSent record
+        issued_quantity = self.printing_and_dyeing_sent.issued_challan_quantity
+        
+        # Calculate received and balance quantities
+        self.received_quantity = issued_quantity - (issued_quantity * self.shrinkage_in_percentage / 100)
+        self.balance_quantity = issued_quantity - self.received_quantity
+        
+        # Update order status
+        if self.order.status == 'Printing and Dyeing Sent':
+            self.order.status = 'Printing and Dyeing Received'
+            self.order.save()
+        
+        # Mark the associated PrintingAndDyeingSent record as received
+        if not self.printing_and_dyeing_sent.received:
+            self.printing_and_dyeing_sent.received = True
+            self.printing_and_dyeing_sent.save()
+        
+        super().save(*args, **kwargs)
+    
+    class Meta:
+        verbose_name_plural = "Printing and Dyeing Received"
 
 class ClothCutting(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE)
@@ -160,7 +188,7 @@ class ClothCutting(models.Model):
     def save(self, *args, **kwargs):
         self.balance_quantity = self.issued_challan_quantity - self.received_quantity
         self.amount = self.received_quantity * self.rate
-        if self.order.status == 'Printing and Dyeing':
+        if self.order.status == 'Printing and Dyeing Received':
             self.order.status = 'Cloth Cutting'
             self.order.save()
         super().save(*args, **kwargs)

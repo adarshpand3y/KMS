@@ -11,8 +11,8 @@ from django.contrib.auth.models import User
 import random
 # from django.utils import timezone
 
-from .models import Order, FabricPurchased, PrintingAndDyeing, ClothCutting, Stitching, ExtraWork, FinishingAndPacking, Dispatch
-from .forms import OrderForm, FabricPurchasedForm, PrintingAndDyeingForm, ClothCuttingForm, StitchingForm, ExtraWorkForm, FinishingAndPackingForm, DispatchForm
+from .models import Order, FabricPurchased, PrintingAndDyeingSent, PrintingAndDyeingReceived, ClothCutting, Stitching, ExtraWork, FinishingAndPacking, Dispatch
+from .forms import OrderForm, FabricPurchasedForm, PrintingAndDyeingSentForm, PrintingAndDyeingReceivedForm, ClothCuttingForm, StitchingForm, ExtraWorkForm, FinishingAndPackingForm, DispatchForm
 
 # Create your views here.
 
@@ -236,12 +236,14 @@ def add_order(request):
     return render(request, 'add_order.html', {'form': form})
 
 @login_required
+@login_required
 def order_detail(request, id):
     order = get_object_or_404(Order, id=id)
     
     # Get all related process objects (if they exist)
     fabric_purchased = FabricPurchased.objects.filter(order=order).first()
-    printing_dyeing = PrintingAndDyeing.objects.filter(order=order).first()
+    printing_dyeing_sent = PrintingAndDyeingSent.objects.filter(order=order).first()
+    printing_dyeing_received = PrintingAndDyeingReceived.objects.filter(order=order).first()
     cloth_cutting = ClothCutting.objects.filter(order=order).first()
     stitching = Stitching.objects.filter(order=order).first()
     extra_works = ExtraWork.objects.filter(order=order)
@@ -254,7 +256,8 @@ def order_detail(request, id):
     context = {
         'order': order,
         'fabric_purchased': fabric_purchased,
-        'printing_dyeing': printing_dyeing,
+        'printing_dyeing_sent': printing_dyeing_sent,
+        'printing_dyeing_received': printing_dyeing_received,
         'cloth_cutting': cloth_cutting, 
         'stitching': stitching,
         'extra_works': extra_works,
@@ -285,31 +288,69 @@ def add_fabricpurchased(request, id):
     return render(request, 'add_fabricpurchased.html', {'form': form, 'order': order})
 
 @login_required
-def add_printinganddyeing(request, id):
+def add_printinganddyeingsent(request, id):
     order = get_object_or_404(Order, id=id)
-
     if order.status != 'Fabric Purchased':
-        messages.error(request, 'Printing and dyeing details can only be added to orders with status "Fabric Purchased".')
+        messages.error(request, 'Printing and dyeing sent details can only be added to orders with status "Fabric Purchased".')
         return redirect('orderdetail', id=id)
-                        
+                       
     if request.method == 'POST':
-        form = PrintingAndDyeingForm(request.POST)
+        form = PrintingAndDyeingSentForm(request.POST)
         if form.is_valid():
-            printing_dyeing = form.save(commit=False)
-            printing_dyeing.order = order
-            printing_dyeing.user = request.user
-            printing_dyeing.save()
-            messages.success(request, 'Printing and dyeing details added successfully.')
+            printing_dyeing_sent = form.save(commit=False)
+            printing_dyeing_sent.order = order
+            printing_dyeing_sent.user = request.user
+            printing_dyeing_sent.save()
+            messages.success(request, 'Printing and dyeing sent details added successfully.')
             return redirect('orderdetail', id=id)
     else:
-        form = PrintingAndDyeingForm()
-    return render(request, 'add_printinganddyeing.html', {'form': form, 'order': order})
+        form = PrintingAndDyeingSentForm()
+    return render(request, 'add_printinganddyeingsent.html', {'form': form, 'order': order})
+
+@login_required
+def add_printinganddyeingreceived(request, id):
+    order = get_object_or_404(Order, id=id)
+    if order.status != 'Printing and Dyeing Sent':
+        messages.error(request, 'Printing and dyeing received details can only be added to orders with status "Printing and Dyeing Sent".')
+        return redirect('orderdetail', id=id)
+    
+    # Get the related sent record
+    printing_dyeing_sent = PrintingAndDyeingSent.objects.filter(order=order).first()
+    if not printing_dyeing_sent:
+        messages.error(request, 'No printing and dyeing sent record found for this order.')
+        return redirect('orderdetail', id=id)
+    
+    # Check if the sent record is already marked as received
+    if printing_dyeing_sent.received:
+        messages.error(request, 'Printing and dyeing received details have already been added for this order.')
+        return redirect('orderdetail', id=id)
+                       
+    if request.method == 'POST':
+        form = PrintingAndDyeingReceivedForm(request.POST)
+        if form.is_valid():
+            printing_dyeing_received = form.save(commit=False)
+            printing_dyeing_received.order = order
+            printing_dyeing_received.printing_and_dyeing_sent = printing_dyeing_sent
+            printing_dyeing_received.user = request.user
+            printing_dyeing_received.save()
+            # Saving the received status in the sent record in this model's save()
+            messages.success(request, 'Printing and dyeing received details added successfully.')
+            return redirect('orderdetail', id=id)
+    else:
+        form = PrintingAndDyeingReceivedForm()
+    
+    context = {
+        'form': form, 
+        'order': order,
+        'printing_dyeing_sent': printing_dyeing_sent
+    }
+    return render(request, 'add_printinganddyeingreceived.html', context)
 
 @login_required
 def add_clothcutting(request, id):
     order = get_object_or_404(Order, id=id)
 
-    if order.status != 'Printing and Dyeing':
+    if order.status != 'Printing and Dyeing Received':
         messages.error(request, 'Cloth cutting details can only be added to orders with status "Printing and Dyeing".')
         return redirect('orderdetail', id=id)
     
@@ -414,7 +455,8 @@ def filter_by_status(request, status):
     STATUS = {
         'pending': 'Pending',
         'fabric_purchased': 'Fabric Purchased',
-        'printing_and_dyeing': 'Printing and Dyeing',
+        'printing_and_dyeing_sent': 'Printing and Dyeing Sent',
+        'printing_and_dyeing_received': 'Printing and Dyeing Received',
         'cloth_cutting': 'Cloth Cutting',
         'stitching': 'Stitching',
         'extra_work': 'Extra Work',
