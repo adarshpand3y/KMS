@@ -29,6 +29,25 @@
                     <li class="nav-item">
                         <a class="nav-link" aria-current="page" href="{% url "track_dyers" %}">Track Dyers</a>
                     </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                          Download CSV
+                        </a>
+                        <ul class="dropdown-menu">
+                          <li>
+                            <form action="/export/m" method="POST">
+                                {% csrf_token %}
+                                <button class="dropdown-item" type="submit">Download Monthly Data</button>
+                            </form>
+                          </li>
+                          <li>
+                            <form action="/export/y" method="POST">
+                                {% csrf_token %}
+                                <button class="dropdown-item" type="submit">Download Yearly Data</button>
+                            </form>
+                          </li>
+                        </ul>
+                      </li>
                 </ul>
                 <form class="d-flex" method="POST" action="/logout">
                     {% csrf_token %}

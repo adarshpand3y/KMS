@@ -5,10 +5,12 @@ from django.contrib.auth import login, authenticate, logout
 from django.contrib import messages
 from django.db.models import Sum, Count, Q
 from django.db.models.functions import TruncDay, TruncMonth
-from datetime import datetime, timedelta
-from django.contrib.auth.models import User
+from datetime import datetime, date
+from django.http import HttpResponse
 
+import calendar
 import random
+import csv
 # from django.utils import timezone
 
 from .models import Order, FabricPurchased, PrintingAndDyeingSent, PrintingAndDyeingReceived, ClothCutting, Stitching, ExtraWork, FinishingAndPacking, Dispatch
@@ -129,7 +131,7 @@ def index(request):
     )
     
     # Prepare data for the chart
-    statuses = ["Pending", "Fabric Purchased", "Printing and Dyeing", "Cloth Cutting", "Stitching", "Extra Work", "Finishing and Packing", "Dispatched"]
+    statuses = ["Pending", "Fabric Purchased", "Printing and Dyeing Sent", "Printing and Dyeing Received", "Cloth Cutting", "Stitching", "Extra Work", "Finishing and Packing", "Dispatched"]
     order_counts = [0] * len(statuses)
     for data in status_data:
         status_index = statuses.index(data['status'])
@@ -491,7 +493,24 @@ def search_orders(request):
                 'search_string': search_string,
             }
             return render(request, 'search.html', context)
-        
+        elif request.method == 'GET':
+            print(request.GET)
+            search_on= request.GET.get('search_on', '')
+            search_string = request.GET.get('search', '')
+            print(search_on, search_string)
+            if not search_string or search_string.isspace() or search_string == '':
+                print("inside")
+                messages.error(request, 'Search query cannot be empty.')
+                return redirect('track_dyers')
+            orders = Order.objects.filter(
+                status='Printing and Dyeing Sent',
+                printinganddyeingsent__dyer_printer_name__iexact=search_string
+            ).order_by('-order_date')
+            context = {
+                'orders': orders,
+                'search_string': search_string,
+            }
+            return render(request, 'search.html', context)
         messages.error(request, 'Invalid search request. Please try again.')
         return redirect('index')
     
@@ -500,4 +519,276 @@ def search_orders(request):
         return redirect('index')
 
 def track_dyers(request):
-    return render(request, 'track_dyers.html')
+    unreceived = (
+        PrintingAndDyeingSent.objects
+        .filter(received=False)
+        .values('dyer_printer_name')
+        .annotate(
+            total_challans=Count('id'),
+            total_quantity=Sum('issued_challan_quantity'),
+            total_amount=Sum('amount')
+        )
+        .order_by('dyer_printer_name')
+    )
+    return render(request, 'track_dyers.html', {'unreceived': unreceived})
+
+@login_required
+def export_orders_csv(request, timespan):
+    """
+    Export orders as CSV based on timespan parameter:
+    - 'y': current financial year (April 1 to March 31)
+    - 'm': current month
+    
+    Multiple ExtraWork entries are added at the end of each row.
+    """
+
+    if request.method != 'POST':
+        messages.error(request, 'Invalid request method.')
+        return redirect('index')
+
+    # Validate timespan parameter
+    if timespan not in ['y', 'm']:
+        return HttpResponse("Invalid timespan parameter. Use 'y' for yearly or 'm' for monthly.", status=400)
+    
+    # Calculate date range based on timespan
+    today = date.today()
+    
+    if timespan == 'y':
+        # Financial year (April 1 to March 31)
+        if today.month < 4:  # Jan-March
+            start_date = date(today.year - 1, 4, 1)
+            end_date = date(today.year, 3, 31)
+        else:  # April-Dec
+            start_date = date(today.year, 4, 1)
+            end_date = date(today.year + 1, 3, 31)
+    else:  # timespan == 'm'
+        # Current month
+        start_date = date(today.year, today.month, 1)
+        last_day = calendar.monthrange(today.year, today.month)[1]
+        end_date = date(today.year, today.month, last_day)
+    
+    # Filter orders based on date range
+    orders = Order.objects.filter(
+        order_date__gte=start_date,
+        order_date__lte=end_date
+    ).order_by('order_date')
+    
+    # Find the maximum number of ExtraWork entries for any order
+    max_extra_works = 0
+    for order in orders:
+        extra_works_count = ExtraWork.objects.filter(order=order).count()
+        if extra_works_count > max_extra_works:
+            max_extra_works = extra_works_count
+    
+    # Create HTTP response with CSV file
+    response = HttpResponse(content_type='text/csv')
+    filename = f"orders_{timespan}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    
+    # Create CSV writer
+    writer = csv.writer(response)
+    
+    # Base header (without ExtraWork)
+    base_header = [
+        'Order ID', 'Style ID', 'Order Date', 'Order From', 'Quantity', 'Rate', 'Size', 'Status', 'Amount',
+        
+        # Fabric Purchased fields
+        'Fabric Purchase Date', 'Purchased From', 'Fabric Quantity', 'Fabric Rate', 'Fabric Amount',
+        'Invoice Number', 'Fabric Detail', 'Fabric Length', 'Fabric Dyer', 'Challan Number',
+        'Issued Challan Date', 'Issued Challan Quantity', 'Balance Fabric',
+        
+        # Printing & Dyeing Sent fields
+        'P&D Sent Date', 'Dyer/Printer Name', 'P&D Fabric Detail', 'P&D Fabric Length',
+        'P&D Issued Quantity', 'P&D Received Status', 'P&D Rate', 'P&D Amount',
+        
+        # Printing & Dyeing Received fields
+        'P&D Received Date', 'Shrinkage (%)', 'P&D Received Quantity', 
+        'P&D Balance Quantity', 'P&D Received Challan',
+        
+        # Cloth Cutting fields
+        'Cutting Issued Date', 'Cutting Challan', 'Cutting Worker Name', 'Cutting Fabric Detail',
+        'Cutting Fabric Length', 'Cutting Issued Quantity', 'Cutting Received Quantity',
+        'Cutting Balance', 'Cutting Received Date', 'Cutting Received Challan', 'Cutting Rate', 'Cutting Amount',
+        
+        # Stitching fields
+        'Stitching Issued Date', 'Stitching Challan', 'Stitching Worker Name', 'Stitching Issued Quantity',
+        'Stitching Received Quantity', 'Stitching Balance', 'Stitching Received Date', 
+        'Stitching Rate', 'Stitching Amount',
+        
+        # Finishing & Packing fields
+        'F&P Issued Date', 'F&P Challan', 'F&P Worker Name', 'F&P Issued Quantity',
+        'F&P Packed Quantity', 'F&P Rejected', 'F&P Rate', 'F&P Amount',
+        
+        # Dispatch fields
+        'Dispatch Date', 'Dispatched To', 'Dispatch Quantity', 'Delivery Note',
+        'Invoice Number', 'Box Details',
+    ]
+    
+    # Add ExtraWork headers at the end
+    extra_work_headers = []
+    for i in range(1, max_extra_works + 1):
+        extra_work_headers.extend([
+            f'Extra Work {i} Issued Date', 
+            f'Extra Work {i} Challan', 
+            f'Extra Work {i} Worker Name', 
+            f'Extra Work {i} Type',
+            f'Extra Work {i} Issued Qty', 
+            f'Extra Work {i} Received Qty', 
+            f'Extra Work {i} Balance',
+            f'Extra Work {i} Rate', 
+            f'Extra Work {i} Amount', 
+            f'Extra Work {i} Received Date'
+        ])
+    
+    # Complete header
+    header = base_header + extra_work_headers
+    writer.writerow(header)
+    
+    # Write data rows
+    for order in orders:
+        # Get related objects
+        try:
+            fabric = FabricPurchased.objects.filter(order=order).first()
+        except FabricPurchased.DoesNotExist:
+            fabric = None
+            
+        try:
+            pd_sent = PrintingAndDyeingSent.objects.filter(order=order).first()
+        except PrintingAndDyeingSent.DoesNotExist:
+            pd_sent = None
+            
+        try:
+            pd_received = PrintingAndDyeingReceived.objects.filter(order=order).first() 
+        except PrintingAndDyeingReceived.DoesNotExist:
+            pd_received = None
+            
+        try:
+            cutting = ClothCutting.objects.filter(order=order).first()
+        except ClothCutting.DoesNotExist:
+            cutting = None
+            
+        try:
+            stitching = Stitching.objects.filter(order=order).first()
+        except Stitching.DoesNotExist:
+            stitching = None
+            
+        try:
+            finishing = FinishingAndPacking.objects.filter(order=order).first()
+        except FinishingAndPacking.DoesNotExist:
+            finishing = None
+            
+        try:
+            dispatch = Dispatch.objects.filter(order=order).first()
+        except Dispatch.DoesNotExist:
+            dispatch = None
+        
+        # Base row (without ExtraWork)
+        base_row = [
+            order.id, order.style_id, order.order_date, order.order_received_from,
+            order.quantity, order.rate, order.size, order.status, order.amount,
+            
+            # Fabric Purchased fields
+            fabric.fabric_purchase_date if fabric else '',
+            fabric.purchased_from if fabric else '',
+            fabric.quantity if fabric else '',
+            fabric.rate if fabric else '',
+            fabric.amount if fabric else '',
+            fabric.invoice_number if fabric else '',
+            fabric.fabric_detail if fabric else '',
+            fabric.fabric_length if fabric else '',
+            fabric.fabric_dyer if fabric else '',
+            fabric.challan_number if fabric else '',
+            fabric.issued_challan_date if fabric else '',
+            fabric.issued_challan_quantity if fabric else '',
+            fabric.balance_fabric if fabric else '',
+            
+            # Printing & Dyeing Sent fields
+            pd_sent.issued_challan_date if pd_sent else '',
+            pd_sent.dyer_printer_name if pd_sent else '',
+            pd_sent.fabric_detail if pd_sent else '',
+            pd_sent.fabric_length if pd_sent else '',
+            pd_sent.issued_challan_quantity if pd_sent else '',
+            pd_sent.received if pd_sent else '',
+            pd_sent.rate if pd_sent else '',
+            pd_sent.amount if pd_sent else '',
+            
+            # Printing & Dyeing Received fields
+            pd_received.received_date if pd_received else '',
+            pd_received.shrinkage_in_percentage if pd_received else '',
+            pd_received.received_quantity if pd_received else '',
+            pd_received.balance_quantity if pd_received else '',
+            pd_received.received_challan_number if pd_received else '',
+            
+            # Cloth Cutting fields
+            cutting.issued_challan_date if cutting else '',
+            cutting.issued_challan_number if cutting else '',
+            cutting.job_worker_name if cutting else '',
+            cutting.fabric_detail if cutting else '',
+            cutting.fabric_length if cutting else '',
+            cutting.issued_challan_quantity if cutting else '',
+            cutting.received_quantity if cutting else '',
+            cutting.balance_quantity if cutting else '',
+            cutting.received_date if cutting else '',
+            cutting.received_challan_number if cutting else '',
+            cutting.rate if cutting else '',
+            cutting.amount if cutting else '',
+            
+            # Stitching fields
+            stitching.issued_challan_date if stitching else '',
+            stitching.issued_challan_number if stitching else '',
+            stitching.job_worker_name if stitching else '',
+            stitching.issued_challan_quantity if stitching else '',
+            stitching.received_quantity if stitching else '',
+            stitching.balance_quantity if stitching else '',
+            stitching.received_date if stitching else '',
+            stitching.rate if stitching else '',
+            stitching.amount if stitching else '',
+            
+            # Finishing & Packing fields
+            finishing.issued_challan_date if finishing else '',
+            finishing.issued_challan_number if finishing else '',
+            finishing.job_worker_name if finishing else '',
+            finishing.issued_challan_quantity if finishing else '',
+            finishing.packed_quantity if finishing else '',
+            finishing.rejected if finishing else '',
+            finishing.rate if finishing else '',
+            finishing.amount if finishing else '',
+            
+            # Dispatch fields
+            dispatch.dispatch_date if dispatch else '',
+            dispatch.dispatched_to if dispatch else '',
+            dispatch.quantity if dispatch else '',
+            dispatch.delivery_note if dispatch else '',
+            dispatch.invoice_number if dispatch else '',
+            dispatch.box_details if dispatch else '',
+        ]
+        
+        # Get all ExtraWork items for this order
+        extra_works = ExtraWork.objects.filter(order=order).order_by('id')
+        
+        # Add ExtraWork data
+        extra_work_data = []
+        for i in range(max_extra_works):
+            if i < len(extra_works):
+                work = extra_works[i]
+                extra_work_data.extend([
+                    work.issued_challan_date,
+                    work.issued_challan_number,
+                    work.job_worker_name,
+                    work.extra_work_name,
+                    work.issued_challan_quantity,
+                    work.received_quantity,
+                    work.balance_quantity,
+                    work.rate,
+                    work.amount,
+                    work.received_date
+                ])
+            else:
+                # Add empty fields for orders with fewer ExtraWork entries
+                extra_work_data.extend([''] * 10)  # 10 fields per ExtraWork
+        
+        # Complete row
+        row = base_row + extra_work_data
+        writer.writerow(row)
+    
+    return response
