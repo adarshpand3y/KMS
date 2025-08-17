@@ -78,45 +78,14 @@ def index(request):
     orders = Order.objects.filter(order_date__gte=first_day_of_month).order_by('-order_date')
 
     total_orders = Order.objects.count()
-    total_revenue = Order.objects.aggregate(total_revenue=Sum('amount'))['total_revenue'] or 0
-    in_production = Order.objects.exclude(status='Dispatched').count()
+    in_pending = Order.objects.filter(status='Pending').count()
+    # total_revenue = Order.objects.aggregate(total_revenue=Sum('amount'))['total_revenue'] or 0
+    in_production = Order.objects.exclude(status='Dispatched').count() - in_pending
     dispatched_orders = Order.objects.filter(status='Dispatched').count()
-
-    # Group the orders by the day of the week (0=Monday, 6=Sunday)
-    orders_by_day = orders.annotate(day_of_week=TruncDay('order_date')).values('day_of_week').annotate(count=Count('id')).order_by('day_of_week')
-
-    # Initialize the week days (Sunday=0, Monday=1, ..., Saturday=6)
-    week_days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
-    
-    # Prepare the data for the chart (count per day)
-    day_counts = [0] * 7  # List to hold counts for each day of the week
-    
-    # Adjust the indexing so Sunday is the first day (0) and Monday is the second day (1)
-    for order in orders_by_day:
-        day_index = order['day_of_week'].weekday()  # 0=Monday, 6=Sunday
-        adjusted_day_index = (day_index + 1) % 7  # Shift days, Sunday=0, Monday=1, ..., Saturday=6
-        day_counts[adjusted_day_index] = order['count']
-    
-    week_days_with_counts = [f"{day} ({count})" for day, count in zip(week_days, day_counts)]
 
     # Get all orders placed in the current month
     start_of_month = today.replace(day=1)
     orders_this_month = Order.objects.filter(order_date__gte=start_of_month)
-
-    # Aggregate the total revenue by day
-    revenue_data = (
-        orders_this_month
-        .values('order_date')  # Group by date
-        .annotate(total_revenue=Sum('amount'))  # Sum the amount for each date
-        .order_by('order_date')  # Order by date
-    )
-
-    # Prepare the data for the chart
-    dates = []
-    revenues = []
-    for data in revenue_data:
-        dates.append(data['order_date'].strftime('%Y-%m-%d'))
-        revenues.append(data['total_revenue'] or 0)
 
     # Get all orders placed in the current month
     orders_this_month = Order.objects.filter(order_date__gte=start_of_month)
@@ -154,15 +123,11 @@ def index(request):
 
     context = {
         'total_orders': total_orders,
-        'total_revenue': total_revenue,
+        # 'total_revenue': total_revenue,
+        'in_pending': in_pending,
         'in_production': in_production,
         'dispatched_orders': dispatched_orders,
-        'orders': orders[:20], ## Display only the first 20 orders
-        'day_counts': day_counts,
-        'week_days': week_days,
-        'week_days_with_counts': week_days_with_counts,
-        'dates': dates,
-        'revenues': revenues,
+        'orders': orders[:20], # Display only the first 20 orders
         'statuses': statuses,
         'order_counts': order_counts,
         'order_labels': order_labels,
