@@ -36,17 +36,8 @@ Dispatched detail printing according to packing slip
 
 
 TODO
-1. remove graphs
-2. change total revenue
-3. export to excel (monthly and current year)
-4. Add Size (XS, S, M, L, XL, 2XL... 5XL) on order details - done
-5. update printing send challan number to fabric issue challan number - done
-6. Add 2 extra work instances and make 2nd one optional - done, user can add n number of extra works
-7. Update dispatch format as provided - done
-8. Split PrintingAndDyeing into two parts: sent and received - done
-
-Advanced features
-1. Track dyeing and printing
+1. Restrict graphs to admins
+2. Restrict CSV download to admins
 
 
 

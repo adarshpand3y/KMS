@@ -6,7 +6,7 @@ from crispy_forms.helper import FormHelper
 class OrderForm(forms.ModelForm):
     class Meta:
         model = Order
-        fields = ['style_id', 'order_received_from', 'quantity', 'rate']
+        fields = ['style_id', 'order_received_from', 'quantity', 'rate', 'order_date']
         widgets = {
             'order_date': forms.DateInput(attrs={'type': 'date', 'placeholder': 'YYYY-MM-DD'}),
         }
