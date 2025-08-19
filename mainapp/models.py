@@ -27,18 +27,38 @@ class Order(models.Model):
         ('3XL', '3XL'),
         ('4XL', '4XL'),
         ('5XL', '5XL'),
+        ('6XL', '6XL'),
+        ('7XL', '7XL'),
+        ('8XL', '8XL'),
+        ('9XL', '9XL'),
+        ('10XL', '10XL'),
     ]
 
     order_date = models.DateField(default=datetime.date.today)
+    po_number = models.CharField(max_length=20, default="")
+    quantity_xs = models.IntegerField(default=0)
+    quantity_s = models.IntegerField(default=0)
+    quantity_m = models.IntegerField(default=0)
+    quantity_l = models.IntegerField(default=0)
+    quantity_xl = models.IntegerField(default=0)
+    quantity_2xl = models.IntegerField(default=0)
+    quantity_3xl = models.IntegerField(default=0)
+    quantity_4xl = models.IntegerField(default=0)
+    quantity_5xl = models.IntegerField(default=0)
+    quantity_6xl = models.IntegerField(default=0)
+    quantity_7xl = models.IntegerField(default=0)
+    quantity_8xl = models.IntegerField(default=0)
+    quantity_9xl = models.IntegerField(default=0)
+    quantity_10xl = models.IntegerField(default=0)
     style_id = models.CharField(max_length=20)
     order_received_from = models.CharField(max_length=20)
     quantity = models.IntegerField()
     rate = models.IntegerField()
-    size = models.CharField(
-        max_length=3,
-        choices=SIZE,
-        default='S',
-    )
+    # size = models.CharField(
+    #     max_length=4,
+    #     choices=SIZE,
+    #     default='S',
+    # )
     
     status = models.CharField(
         max_length=50,
@@ -53,6 +73,11 @@ class Order(models.Model):
         return f"Order # {self.style_id} - {self.order_received_from}"
 
     def save(self, *args, **kwargs):
+        self.quantity = (self.quantity_xs + self.quantity_s + self.quantity_m +
+                         self.quantity_l + self.quantity_xl + self.quantity_2xl +
+                         self.quantity_3xl + self.quantity_4xl + self.quantity_5xl
+                         + self.quantity_6xl + self.quantity_7xl + self.quantity_8xl +
+                         self.quantity_9xl + self.quantity_10xl)
         self.amount = self.quantity * self.rate
         super().save(*args, **kwargs)
 
@@ -61,16 +86,14 @@ class FabricPurchased(models.Model):
     fabric_purchase_date = models.DateField(default=datetime.date.today)
     # style_id - will get from linked parent order
     purchased_from = models.CharField(max_length=100)
-    quantity = models.IntegerField()
+    quantity = models.IntegerField(help_text="Quantity of fabric received after purchase.")
     rate = models.DecimalField(max_digits=10, decimal_places=2)
     amount = models.DecimalField(max_digits=10, decimal_places=2, blank=True) # calculated field
     invoice_number = models.CharField(max_length=50)
     fabric_detail = models.CharField(max_length=100)
     fabric_length = models.CharField(max_length=20)
     fabric_dyer = models.CharField(max_length=100)
-    challan_number = models.CharField(max_length=50)
-    issued_challan_date = models.DateField(default=datetime.date.today)
-    issued_challan_quantity = models.IntegerField()
+    issued_challan_quantity = models.IntegerField(help_text="Quantity of fabric to buy mentioned in challan.")
     balance_fabric = models.DecimalField(max_digits=10, decimal_places=2, blank=True) # calculated field
 
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
@@ -128,7 +151,9 @@ class PrintingAndDyeingReceived(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE)
     printing_and_dyeing_sent = models.ForeignKey(PrintingAndDyeingSent, on_delete=models.CASCADE)
     shrinkage_in_percentage = models.DecimalField(max_digits=10, decimal_places=2)
-    received_quantity = models.IntegerField()
+    received_quantity = models.IntegerField(default=0)
+    received_quantity2 = models.IntegerField(default=0)
+    received_quantity3 = models.IntegerField(default=0)
     balance_quantity = models.IntegerField(blank=True)  # calculated field
     received_date = models.DateField(default=datetime.date.today)
     received_challan_number = models.CharField(max_length=50)
@@ -144,7 +169,7 @@ class PrintingAndDyeingReceived(models.Model):
         
         # Calculate received and balance quantities
         self.received_quantity = issued_quantity - (issued_quantity * self.shrinkage_in_percentage / 100)
-        self.balance_quantity = issued_quantity - self.received_quantity
+        self.balance_quantity = issued_quantity - self.received_quantity - self.received_quantity2 - self.received_quantity3
         
         # Update order status
         if self.order.status == 'Printing and Dyeing Sent':

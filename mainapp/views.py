@@ -127,7 +127,7 @@ def index(request):
         'in_pending': in_pending,
         'in_production': in_production,
         'dispatched_orders': dispatched_orders,
-        'orders': orders[:20], # Display only the first 20 orders
+        'orders': orders, # Display all orders
         'statuses': statuses,
         'order_counts': order_counts,
         'order_labels': order_labels,
@@ -203,7 +203,6 @@ def add_order(request):
     return render(request, 'add_order.html', {'form': form})
 
 @login_required
-@login_required
 def order_detail(request, id):
     order = get_object_or_404(Order, id=id)
     
@@ -216,6 +215,22 @@ def order_detail(request, id):
     extra_works = ExtraWork.objects.filter(order=order)
     finishing_packing = FinishingAndPacking.objects.filter(order=order).first()
     dispatch = Dispatch.objects.filter(order=order).first()
+
+    order_size_quantities = [
+        ["S", order.quantity_xs],
+        ["M", order.quantity_s],
+        ["L", order.quantity_m],
+        ["XL", order.quantity_l],
+        ["2XL", order.quantity_xl],
+        ["3XL", order.quantity_3xl],
+        ["4XL", order.quantity_4xl],
+        ["5XL", order.quantity_5xl],
+        ["6XL", order.quantity_6xl],
+        ["7XL", order.quantity_7xl],
+        ["8XL", order.quantity_8xl],
+        ["9XL", order.quantity_9xl],
+        ["10XL", order.quantity_10xl]
+    ]
 
     if dispatch:
         dispatch.box_details = [item for item in dispatch.box_details.replace("\r", "\n").split("\n") if item.strip() != ""]
@@ -230,6 +245,7 @@ def order_detail(request, id):
         'extra_works': extra_works,
         'finishing_packing': finishing_packing,
         'dispatch': dispatch,
+        'order_size_quantities': order_size_quantities
     }
     return render(request, 'order_detail.html', context)
 

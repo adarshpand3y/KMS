@@ -6,7 +6,11 @@ from crispy_forms.helper import FormHelper
 class OrderForm(forms.ModelForm):
     class Meta:
         model = Order
-        fields = ['style_id', 'order_received_from', 'quantity', 'rate', 'order_date']
+        fields = ['po_number', 'style_id', 'order_received_from', 
+                  'quantity_xs', 'quantity_s', 'quantity_m', 'quantity_l', 'quantity_xl', 
+                  'quantity_2xl', 'quantity_3xl', 'quantity_4xl', 'quantity_5xl',
+                  'quantity_6xl', 'quantity_7xl', 'quantity_8xl', 'quantity_9xl', 'quantity_10xl',
+                  'rate', 'order_date']
         widgets = {
             'order_date': forms.DateInput(attrs={'type': 'date', 'placeholder': 'YYYY-MM-DD'}),
         }
@@ -15,8 +19,7 @@ class FabricPurchasedForm(forms.ModelForm):
     class Meta:
         model = FabricPurchased
         fields = ['fabric_purchase_date', 'purchased_from', 'quantity', 'rate', 'invoice_number', 
-                  'fabric_detail', 'fabric_length', 'fabric_dyer', 'challan_number', 'issued_challan_date', 
-                  'issued_challan_quantity']
+                  'fabric_detail', 'fabric_length', 'fabric_dyer', 'issued_challan_quantity']
         widgets = {
             'fabric_purchase_date': forms.DateInput(attrs={'type': 'date', 'placeholder': 'YYYY-MM-DD'}),
             'issued_challan_date': forms.DateInput(attrs={'type': 'date', 'placeholder': 'YYYY-MM-DD'}),
