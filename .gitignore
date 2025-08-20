@@ -139,3 +139,10 @@ GitHub.sublime-settings
 
 # My additions
 exports
+
+# Ignore all migration files
+**/migrations/*.py
+**/migrations/*.pyc
+
+# But keep __init__.py so the folder stays a valid Python module
+!**/migrations/__init__.py
