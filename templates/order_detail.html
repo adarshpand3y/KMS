@@ -193,14 +193,6 @@ KMS
                         <th scope="row">Fabric Dyer</th>
                         <td>{{ fabric_purchased.fabric_dyer }}</td>
                       </tr>
-                      <tr>
-                        <th scope="row">Issued Challan Quantity</th>
-                        <td>{{ fabric_purchased.issued_challan_quantity|indian_number_format }}</td>
-                      </tr>
-                      <tr>
-                        <th scope="row">Balance Fabric</th>
-                        <td>{{ fabric_purchased.balance_fabric|indian_number_format }}</td>
-                      </tr>
                     </tbody>
                   </table>
                 </div>
@@ -272,21 +264,6 @@ KMS
                       </tr>
                     </tbody>
                   </table>
-                  <h5 class="mb-3">Printing/Dyeing Invoice Details</h5>
-                  <div class="table-responsive">
-                    <table class="table table-bordered table-striped table-hover">
-                      <tbody>
-                        <tr>
-                          <th scope="row">Rate</th>
-                          <td>₹ {{ printing_dyeing_sent.rate|indian_number_format }}</td>
-                        </tr>
-                        <tr>
-                          <th scope="row">Amount</th>
-                          <td>₹ {{ printing_dyeing_sent.amount|indian_number_format }}</td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
                 </div>
                 {% else %}
                 <div class="text-center py-3">
@@ -358,6 +335,21 @@ KMS
                       </tr>
                     </tbody>
                   </table>
+                  <h5 class="mb-3">Printing/Dyeing Invoice Details</h5>
+                  <div class="table-responsive">
+                    <table class="table table-bordered table-striped table-hover">
+                      <tbody>
+                        <tr>
+                          <th scope="row">Rate</th>
+                          <td>₹ {{ printing_dyeing_received.rate|indian_number_format }}</td>
+                        </tr>
+                        <tr>
+                          <th scope="row">Amount</th>
+                          <td>₹ {{ printing_dyeing_received.amount|indian_number_format }}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
                 {% else %}
                 <div class="text-center py-3">

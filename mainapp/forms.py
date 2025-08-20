@@ -19,7 +19,7 @@ class FabricPurchasedForm(forms.ModelForm):
     class Meta:
         model = FabricPurchased
         fields = ['fabric_purchase_date', 'purchased_from', 'quantity', 'rate', 'invoice_number', 
-                  'fabric_detail', 'fabric_length', 'fabric_dyer', 'issued_challan_quantity']
+                  'fabric_detail', 'fabric_length', 'fabric_dyer']
         widgets = {
             'fabric_purchase_date': forms.DateInput(attrs={'type': 'date', 'placeholder': 'YYYY-MM-DD'}),
             'issued_challan_date': forms.DateInput(attrs={'type': 'date', 'placeholder': 'YYYY-MM-DD'}),
@@ -29,7 +29,7 @@ class PrintingAndDyeingSentForm(forms.ModelForm):
     class Meta:
         model = PrintingAndDyeingSent
         fields = ['issued_challan_date', 'dyer_printer_name', 'fabric_detail', 
-                  'fabric_length', 'issued_challan_quantity', 'rate']
+                  'fabric_length', 'issued_challan_quantity']
         widgets = {
             'issued_challan_date': forms.DateInput(attrs={'type': 'date', 'placeholder': 'YYYY-MM-DD'}),
         }
@@ -38,7 +38,7 @@ class PrintingAndDyeingReceivedForm(forms.ModelForm):
     class Meta:
         model = PrintingAndDyeingReceived
         fields = ['shrinkage_in_percentage', 'received_date', 
-                  'received_challan_number']
+                  'received_challan_number', 'rate']
         widgets = {
             'received_date': forms.DateInput(attrs={'type': 'date', 'placeholder': 'YYYY-MM-DD'}),
         }
