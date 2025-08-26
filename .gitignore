@@ -139,6 +139,7 @@ GitHub.sublime-settings
 
 # My additions
 exports
+.env.local
 
 # Ignore all migration files
 **/migrations/*.py

@@ -507,7 +507,6 @@ def track_dyers(request):
         .annotate(
             total_challans=Count('id'),
             total_quantity=Sum('issued_challan_quantity'),
-            total_amount=Sum('amount')
         )
         .order_by('dyer_printer_name')
     )

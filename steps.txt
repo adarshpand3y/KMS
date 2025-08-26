@@ -21,10 +21,6 @@ TODO
 
 REMOVE EXTRA VIEWS AND URLS AFTER DEV
 
-add extra work model, form and view and add it to the step - done
-create filter order - done
-on homepage limit orders to 10 most recent - done
-Create search order - done
 create all orders page
 create custom name and icon branding
 add challan generation and printing
@@ -36,9 +32,9 @@ Dispatched detail printing according to packing slip
 
 
 TODO
-1. Restrict graphs to admins
-2. Restrict CSV download to admins
-
+1. Create custom branding
+2. Fix CSV download
+3. Create themes
 
 
 ==================================================

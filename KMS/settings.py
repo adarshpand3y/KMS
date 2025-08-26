@@ -12,9 +12,14 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 
 from pathlib import Path
 from django.contrib.messages import constants as messages
+from dotenv import load_dotenv
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Load environment variables from .env.local
+load_dotenv(dotenv_path=BASE_DIR / '.env.local')
 
 
 # Quick-start development settings - unsuitable for production
@@ -24,9 +29,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-mw2(x)!gdg@$t2buvd0md0z!xt!ynf%$x--45b^o3^wh#cs%%9'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [host.strip() for host in os.getenv('ALLOWED_HOSTS', '').split(',')]
 
 # CSRF_TRUSTED_ORIGINS = ["https://*.ngrok-free.app"]
 
@@ -70,6 +75,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'mainapp.context_processors.branding_details',
             ],
         },
     },
@@ -150,3 +156,10 @@ MESSAGE_TAGS = {
 }
 
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+BRAND_FULL_NAME = os.getenv('BRAND_NAME_FULL', 'Default Full Name')
+BRAND_SHORT_NAME = os.getenv('BRAND_NAME_SHORT', 'Default Short Name')
+
+SITE_HEADER_TEXT = f"{BRAND_FULL_NAME} Administration"
+SITE_TITLE_TEXT = f"{BRAND_FULL_NAME} Admin Portal"
+SITE_INDEX_TITLE = f"{BRAND_FULL_NAME} Administration"

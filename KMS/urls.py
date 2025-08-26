@@ -17,7 +17,13 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 
+from KMS import settings
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include("mainapp.urls")),
 ]
+
+admin.site.site_header = settings.SITE_HEADER_TEXT
+admin.site.site_title = settings.SITE_TITLE_TEXT
+admin.site.index_title = settings.SITE_INDEX_TITLE
