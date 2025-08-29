@@ -475,18 +475,27 @@ def search_orders(request):
             }
             return render(request, 'search.html', context)
         elif request.method == 'GET':
-            print(request.GET)
             search_on= request.GET.get('search_on', '')
             search_string = request.GET.get('search', '')
-            print(search_on, search_string)
             if not search_string or search_string.isspace() or search_string == '':
-                print("inside")
                 messages.error(request, 'Search query cannot be empty.')
                 return redirect('track_dyers')
-            orders = Order.objects.filter(
-                status='Printing and Dyeing Sent',
-                printinganddyeingsent__dyer_printer_name__iexact=search_string
-            ).order_by('-order_date')
+            if search_on == 'dyer_printer_name':
+                orders = Order.objects.filter(
+                    status='Printing and Dyeing Sent',
+                    printinganddyeingsent__dyer_printer_name__iexact=search_string
+                ).order_by('-order_date')
+            elif search_on == 'fabric_detail':
+                orders = Order.objects.filter(
+                    status__in=['Fabric Purchased', 'Printing and Dyeing Sent',
+                                'Printing and Dyeing Received',
+                                'Cloth Cutting',
+                                'Stitching',
+                                'Extra Work',
+                                'Finishing and Packing'
+                                ],
+                    printinganddyeingsent__fabric_detail__iexact=search_string
+                ).order_by('-order_date')
             context = {
                 'orders': orders,
                 'search_string': search_string,
@@ -508,9 +517,30 @@ def track_dyers(request):
             total_challans=Count('id'),
             total_quantity=Sum('issued_challan_quantity'),
         )
-        .order_by('dyer_printer_name')
+        .order_by('-total_quantity')
     )
     return render(request, 'track_dyers.html', {'unreceived': unreceived})
+
+def track_fabrics(request):
+    fabrics = (
+    PrintingAndDyeingSent.objects
+        .filter(order__status__in=[
+            'Fabric Purchased',
+            'Printing and Dyeing Sent',
+            'Printing and Dyeing Received',
+            'Cloth Cutting',
+            'Stitching',
+            'Extra Work',
+            'Finishing and Packing'
+        ])  # Exclude 'Pending' and 'Dispatched'
+        .values('fabric_detail')
+        .annotate(
+            total_quantity=Sum('issued_challan_quantity'),
+            total_orders=Count('order', distinct=True)
+        )
+        .order_by('-total_orders', '-total_quantity')
+    )
+    return render(request, 'track_fabrics.html', {'fabrics': fabrics})
 
 @login_required
 def export_orders_csv(request, timespan):
@@ -570,20 +600,23 @@ def export_orders_csv(request, timespan):
     
     # Base header (without ExtraWork)
     base_header = [
-        'Order ID', 'Style ID', 'Order Date', 'Order From', 'Quantity', 'Rate', 'Size', 'Status', 'Amount',
+        'Order ID', 'Style ID', 'PO Number', 'Order Date', 'Order From', 
+        # Size quantities
+        'Qty XS', 'Qty S', 'Qty M', 'Qty L', 'Qty XL', 'Qty 2XL', 'Qty 3XL', 
+        'Qty 4XL', 'Qty 5XL', 'Qty 6XL', 'Qty 7XL', 'Qty 8XL', 'Qty 9XL', 'Qty 10XL',
+        'Total Quantity', 'Rate', 'Status', 'Amount',
         
         # Fabric Purchased fields
         'Fabric Purchase Date', 'Purchased From', 'Fabric Quantity', 'Fabric Rate', 'Fabric Amount',
-        'Invoice Number', 'Fabric Detail', 'Fabric Length', 'Fabric Dyer', 'Challan Number',
-        'Issued Challan Date', 'Issued Challan Quantity', 'Balance Fabric',
+        'Invoice Number', 'Fabric Detail', 'Fabric Length', 'Fabric Dyer',
         
         # Printing & Dyeing Sent fields
         'P&D Sent Date', 'Dyer/Printer Name', 'P&D Fabric Detail', 'P&D Fabric Length',
-        'P&D Issued Quantity', 'P&D Received Status', 'P&D Rate', 'P&D Amount',
+        'P&D Issued Quantity', 'P&D Received Status',
         
         # Printing & Dyeing Received fields
         'P&D Received Date', 'Shrinkage (%)', 'P&D Received Quantity', 
-        'P&D Balance Quantity', 'P&D Received Challan',
+        'P&D Balance Quantity', 'P&D Received Challan', 'P&D Rate', 'P&D Amount',
         
         # Cloth Cutting fields
         'Cutting Issued Date', 'Cutting Challan', 'Cutting Worker Name', 'Cutting Fabric Detail',
@@ -601,7 +634,7 @@ def export_orders_csv(request, timespan):
         
         # Dispatch fields
         'Dispatch Date', 'Dispatched To', 'Dispatch Quantity', 'Delivery Note',
-        'Invoice Number', 'Box Details',
+        'Dispatch Invoice Number', 'Box Details',
     ]
     
     # Add ExtraWork headers at the end
@@ -664,8 +697,13 @@ def export_orders_csv(request, timespan):
         
         # Base row (without ExtraWork)
         base_row = [
-            order.id, order.style_id, order.order_date, order.order_received_from,
-            order.quantity, order.rate, order.size, order.status, order.amount,
+            order.id, order.style_id, order.po_number, order.order_date, order.order_received_from,
+            # Size quantities
+            order.quantity_xs, order.quantity_s, order.quantity_m, order.quantity_l, 
+            order.quantity_xl, order.quantity_2xl, order.quantity_3xl, order.quantity_4xl,
+            order.quantity_5xl, order.quantity_6xl, order.quantity_7xl, order.quantity_8xl,
+            order.quantity_9xl, order.quantity_10xl,
+            order.quantity, order.rate, order.status, order.amount,
             
             # Fabric Purchased fields
             fabric.fabric_purchase_date if fabric else '',
@@ -677,10 +715,6 @@ def export_orders_csv(request, timespan):
             fabric.fabric_detail if fabric else '',
             fabric.fabric_length if fabric else '',
             fabric.fabric_dyer if fabric else '',
-            fabric.challan_number if fabric else '',
-            fabric.issued_challan_date if fabric else '',
-            fabric.issued_challan_quantity if fabric else '',
-            fabric.balance_fabric if fabric else '',
             
             # Printing & Dyeing Sent fields
             pd_sent.issued_challan_date if pd_sent else '',
@@ -689,8 +723,6 @@ def export_orders_csv(request, timespan):
             pd_sent.fabric_length if pd_sent else '',
             pd_sent.issued_challan_quantity if pd_sent else '',
             pd_sent.received if pd_sent else '',
-            pd_sent.rate if pd_sent else '',
-            pd_sent.amount if pd_sent else '',
             
             # Printing & Dyeing Received fields
             pd_received.received_date if pd_received else '',
@@ -698,6 +730,8 @@ def export_orders_csv(request, timespan):
             pd_received.received_quantity if pd_received else '',
             pd_received.balance_quantity if pd_received else '',
             pd_received.received_challan_number if pd_received else '',
+            pd_received.rate if pd_received else '',
+            pd_received.amount if pd_received else '',
             
             # Cloth Cutting fields
             cutting.issued_challan_date if cutting else '',

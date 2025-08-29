@@ -32,9 +32,8 @@ Dispatched detail printing according to packing slip
 
 
 TODO
-1. Create custom branding
-2. Fix CSV download
-3. Create themes
+1. Create themes
+2. Order close date and turn around time
 
 
 ==================================================
@@ -45,8 +44,22 @@ python manage.py generate_fake_data --orders 50
 # Associate records with a specific user
 python manage.py generate_fake_data --user admin
 
-# Generate complete lifecycle for half of the orders
+# Generate complete lifecycle for half of the orders - only makes half the orders dispatched.
 python manage.py generate_fake_data --complete
 
 # Combine options
 python manage.py generate_fake_data --orders 30 --user admin --complete
+
+
+Features:-
+01. Complete order lifecycle management.
+02. Analytics: Visually appealing UI and graphs to read data with a glance.
+03. Order filtering and searching.
+04. Monthly/Yearly CSV data download: download as excel.
+05. Order addition size wise.
+06. Display box quantity details easily.
+07. Dyer tracking: Track fabric sent to each dyer.
+08. Fabric tracking: Track orders fabric wise.
+09. Custom company branding.
+10. Themes. WIP
+11. Order closing and turn around time. WIP

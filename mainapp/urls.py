@@ -22,5 +22,6 @@ urlpatterns = [
     path('search', views.search_orders, name='search_orders'),
 
     path('trackdyers', views.track_dyers, name='track_dyers'),
+    path('trackfabrics', views.track_fabrics, name='track_fabrics'),
     path('export/<str:timespan>', views.export_orders_csv, name='export_orders_csv'),
 ]
